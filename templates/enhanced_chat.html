@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛡️ SOC AI Agents - Advanced Security Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --critical-color: #dc2626;
+            --dark-bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg) 0%, #1e293b 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.warning {
+            background: var(--warning-color);
+        }
+
+        .status-indicator.danger {
+            background: var(--danger-color);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            min-height: calc(100vh - 80px);
+        }
+
+        .chat-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .chat-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 500px;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .chat-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: var(--primary-color);
+        }
+
+        .message.bot .message-avatar {
+            background: var(--success-color);
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+
+        .message.user .message-content {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .message.bot .message-content {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .chat-input-container {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            background: var(--card-bg);
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-end;
+        }
+
+        .chat-input textarea {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            resize: none;
+            min-height: 40px;
+            max-height: 120px;
+            font-family: inherit;
+        }
+
+        .chat-input textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .send-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .send-btn:hover {
+            background: var(--secondary-color);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 0.75rem 1rem;
+            color: var(--text-secondary);
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+
+        .typing-indicator.show {
+            display: block;
+        }
+
+        .security-dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .dashboard-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-content {
+            padding: 1rem;
+        }
+
+        .alert-item {
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            border-left: 4px solid;
+            animation: alertSlide 0.3s ease-out;
+        }
+
+        @keyframes alertSlide {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .alert-item.critical {
+            background: rgba(220, 38, 38, 0.1);
+            border-left-color: var(--critical-color);
+        }
+
+        .alert-item.high {
+            background: rgba(239, 68, 68, 0.1);
+            border-left-color: var(--danger-color);
+        }
+
+        .alert-item.medium {
+            background: rgba(245, 158, 11, 0.1);
+            border-left-color: var(--warning-color);
+        }
+
+        .alert-item.low {
+            background: rgba(16, 185, 129, 0.1);
+            border-left-color: var(--success-color);
+        }
+
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-severity {
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .alert-time {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .alert-title {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .alert-description {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            border-radius: 4px;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .metric-item {
+            text-align: center;
+            padding: 1rem;
+            background: var(--dark-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .no-alerts {
+            text-align: center;
+            color: var(--text-secondary);
+            font-style: italic;
+            padding: 2rem;
+        }
+
+        .threat-chart {
+            height: 200px;
+            position: relative;
+        }
+
+        .system-status {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .status-row:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            font-size: 0.9rem;
+        }
+
+        .status-value {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .status-value.online {
+            color: var(--success-color);
+        }
+
+        .status-value.offline {
+            color: var(--danger-color);
+        }
+
+        .status-value.warning {
+            color: var(--warning-color);
+        }
+
+        @media (max-width: 1024px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .security-dashboard {
+                order: -1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .status-bar {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .main-container {
+                padding: 1rem;
+            }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .notification.success {
+            background: var(--success-color);
+        }
+
+        .notification.warning {
+            background: var(--warning-color);
+        }
+
+        .notification.danger {
+            background: var(--danger-color);
+        }
+
+        .notification.critical {
+            background: var(--critical-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-shield-alt"></i>
+                SOC AI Agents
+            </div>
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="status-indicator" id="soc-status-indicator"></div>
+                    <span>SOC: <span id="soc-status">ACTIVE</span></span>
+                </div>
+                <div class="status-item">
+                    <div class="status-indicator" id="alerts-indicator"></div>
+                    <span>Alerts: <span id="alert-count">0</span></span>
+                </div>
+                <div class="status-item">
+                    <div class="status-indicator"></div>
+                    <span>Session: <span id="session-id">{{ session_id[:8] }}</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="chat-section">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <div class="chat-title">
+                        <i class="fas fa-comments"></i>
+                        Secure AI Chat Interface
+                    </div>
+                    <div class="chat-controls">
+                        <button class="btn btn-primary" onclick="clearChat()" title="Clear Chat">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <button class="btn btn-primary" onclick="exportChat()" title="Export Chat">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="chat-messages" id="chat-messages">
+                    <div class="message bot">
+                        <div class="message-avatar">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="message-content">
+                            <div>Hello! I'm a chatbot protected by SOC AI Agents. I monitor for security threats like prompt injection, data exfiltration, and malicious inputs in real-time.</div>
+                            <div class="message-time" id="welcome-time"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="typing-indicator" id="typing-indicator">
+                    <i class="fas fa-circle-notch fa-spin"></i>
+                    Bot is analyzing your message...
+                </div>
+                <div class="chat-input-container">
+                    <div class="chat-input">
+                        <textarea id="message-input" placeholder="Type your message here... (Press Ctrl+Enter to send)" rows="1"></textarea>
+                        <button class="send-btn" id="send-btn" onclick="sendMessage()">
+                            <i class="fas fa-paper-plane"></i>
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="security-dashboard">
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Security Alerts
+                    </div>
+                    <button class="btn btn-primary" onclick="refreshAlerts()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <div class="card-content" id="security-content">
+                    <div class="no-alerts">
+                        <i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: 1rem; color: var(--success-color);"></i>
+                        <div>No security alerts detected</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-chart-pie"></i>
+                        Threat Metrics
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <div class="metric-value" id="total-alerts">0</div>
+                            <div class="metric-label">Total Alerts</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" id="critical-alerts">0</div>
+                            <div class="metric-label">Critical</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" id="blocked-ips">0</div>
+                            <div class="metric-label">Blocked IPs</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" id="monitored-sessions">1</div>
+                            <div class="metric-label">Sessions</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-server"></i>
+                        System Status
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="system-status">
+                        <div class="status-row">
+                            <span class="status-label">SOC Analyst</span>
+                            <span class="status-value online" id="analyst-status">Online</span>
+                        </div>
+                        <div class="status-row">
+                            <span class="status-label">Remediator</span>
+                            <span class="status-value online" id="remediator-status">Online</span>
+                        </div>
+                        <div class="status-row">
+                            <span class="status-label">Rules Engine</span>
+                            <span class="status-value online" id="rules-status">Active</span>
+                        </div>
+                        <div class="status-row">
+                            <span class="status-label">Message Bus</span>
+                            <span class="status-value online" id="bus-status">Connected</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-chart-line"></i>
+                        Threat Types
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="threat-chart">
+                        <canvas id="threatChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const sessionId = '{{ session_id }}';
+        let alertCount = 0;
+        let threatChart = null;
+        let threatData = {
+            'prompt_injection': 0,
+            'data_exfiltration': 0,
+            'malicious_input': 0,
+            'system_manipulation': 0,
+            'privacy_violation': 0,
+            'rate_limit_abuse': 0
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('welcome-time').textContent = new Date().toLocaleTimeString();
+            initializeThreatChart();
+            loadInitialData();
+        });
+
+        // Socket connection
+        socket.emit('join_session', { session_id: sessionId });
+
+        socket.on('connect', function() {
+            console.log('Connected to SOC-protected chatbot');
+            showNotification('Connected to SOC monitoring system', 'success');
+        });
+
+        socket.on('security_alert', function(data) {
+            console.log('Security alert received:', data);
+            addSecurityAlert(data);
+            updateMetrics(data);
+            alertCount++;
+            updateAlertCount();
+            showNotification(`Security Alert: ${data.title}`, data.severity.toLowerCase());
+        });
+
+        // Chat functionality
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            // Add user message to chat
+            addMessage(message, 'user');
+            input.value = '';
+            input.style.height = 'auto';
+
+            // Show typing indicator
+            showTypingIndicator();
+
+            // Send message to server
+            fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideTypingIndicator();
+                addMessage(data.response, 'bot');
+                
+                // Handle security alert
+                if (data.security_alert.detected) {
+                    console.log('Security threat detected:', data.security_alert);
+                }
+            })
+            .catch(error => {
+                hideTypingIndicator();
+                console.error('Error:', error);
+                addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+                showNotification('Error communicating with server', 'danger');
+            });
+        }
+
+        function addMessage(message, sender) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.innerHTML = sender === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
+            
+            const content = document.createElement('div');
+            content.className = 'message-content';
+            
+            const messageText = document.createElement('div');
+            messageText.textContent = message;
+            
+            const messageTime = document.createElement('div');
+            messageTime.className = 'message-time';
+            messageTime.textContent = new Date().toLocaleTimeString();
+            
+            content.appendChild(messageText);
+            content.appendChild(messageTime);
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(content);
+            messagesContainer.appendChild(messageDiv);
+            
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function addSecurityAlert(alert) {
+            const securityContent = document.getElementById('security-content');
+            
+            // Remove "no alerts" message if it exists
+            const noAlerts = securityContent.querySelector('.no-alerts');
+            if (noAlerts) {
+                noAlerts.remove();
+            }
+            
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert-item ${alert.severity.toLowerCase()}`;
+            
+            alertDiv.innerHTML = `
+                <div class="alert-header">
+                    <div class="alert-severity">${getSeverityIcon(alert.severity)} ${alert.severity.toUpperCase()}</div>
+                    <div class="alert-time">${new Date(alert.timestamp).toLocaleTimeString()}</div>
+                </div>
+                <div class="alert-title">${alert.title}</div>
+                <div class="alert-description">${alert.description}</div>
+                <div class="alert-actions">
+                    <button class="btn btn-sm btn-danger" onclick="blockThreat('${alert.rule_id}')">
+                        <i class="fas fa-ban"></i> Block
+                    </button>
+                    <button class="btn btn-sm btn-warning" onclick="investigateThreat('${alert.rule_id}')">
+                        <i class="fas fa-search"></i> Investigate
+                    </button>
+                </div>
+            `;
+            
+            securityContent.insertBefore(alertDiv, securityContent.firstChild);
+            
+            // Keep only last 10 alerts
+            const alerts = securityContent.querySelectorAll('.alert-item');
+            if (alerts.length > 10) {
+                alerts[alerts.length - 1].remove();
+            }
+        }
+
+        function getSeverityIcon(severity) {
+            const icons = {
+                'critical': '<i class="fas fa-exclamation-circle"></i>',
+                'high': '<i class="fas fa-exclamation-triangle"></i>',
+                'medium': '<i class="fas fa-exclamation"></i>',
+                'low': '<i class="fas fa-info-circle"></i>'
+            };
+            return icons[severity.toLowerCase()] || '<i class="fas fa-info"></i>';
+        }
+
+        function updateMetrics(alert) {
+            // Update threat data
+            if (threatData.hasOwnProperty(alert.threat_type)) {
+                threatData[alert.threat_type]++;
+            }
+            
+            // Update chart
+            if (threatChart) {
+                threatChart.data.datasets[0].data = Object.values(threatData);
+                threatChart.update();
+            }
+            
+            // Update metric values
+            document.getElementById('total-alerts').textContent = alertCount;
+            if (alert.severity === 'critical') {
+                const criticalCount = parseInt(document.getElementById('critical-alerts').textContent) + 1;
+                document.getElementById('critical-alerts').textContent = criticalCount;
+            }
+        }
+
+        function updateAlertCount() {
+            document.getElementById('alert-count').textContent = alertCount;
+            
+            // Update status indicator
+            const indicator = document.getElementById('alerts-indicator');
+            if (alertCount > 0) {
+                indicator.classList.add('warning');
+                if (alertCount > 5) {
+                    indicator.classList.remove('warning');
+                    indicator.classList.add('danger');
+                }
+            }
+        }
+
+        function showTypingIndicator() {
+            document.getElementById('typing-indicator').classList.add('show');
+            document.getElementById('send-btn').disabled = true;
+        }
+
+        function hideTypingIndicator() {
+            document.getElementById('typing-indicator').classList.remove('show');
+            document.getElementById('send-btn').disabled = false;
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        function clearChat() {
+            const messagesContainer = document.getElementById('chat-messages');
+            messagesContainer.innerHTML = `
+                <div class="message bot">
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <div>Chat cleared. How can I help you today?</div>
+                        <div class="message-time">${new Date().toLocaleTimeString()}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function exportChat() {
+            const messages = document.querySelectorAll('.message');
+            let chatText = 'SOC AI Agents Chat Export\n';
+            chatText += '='.repeat(50) + '\n\n';
+            
+            messages.forEach(message => {
+                const sender = message.classList.contains('user') ? 'User' : 'Bot';
+                const content = message.querySelector('.message-content div:first-child').textContent;
+                const time = message.querySelector('.message-time').textContent;
+                chatText += `[${time}] ${sender}: ${content}\n\n`;
+            });
+            
+            const blob = new Blob([chatText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `soc-chat-export-${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function refreshAlerts() {
+            fetch('/api/security/alerts')
+                .then(response => response.json())
+                .then(data => {
+                    // Clear existing alerts
+                    const securityContent = document.getElementById('security-content');
+                    securityContent.innerHTML = '<div class="no-alerts">Loading alerts...</div>';
+                    
+                    if (data.alerts.length > 0) {
+                        securityContent.innerHTML = '';
+                        data.alerts.forEach(alert => {
+                            addSecurityAlert(alert);
+                        });
+                    } else {
+                        securityContent.innerHTML = '<div class="no-alerts">No security alerts detected</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading alerts:', error);
+                    showNotification('Error loading alerts', 'danger');
+                });
+        }
+
+        function blockThreat(ruleId) {
+            showNotification(`Blocking threat: ${ruleId}`, 'warning');
+            // In a real implementation, this would call the remediation API
+        }
+
+        function investigateThreat(ruleId) {
+            showNotification(`Investigating threat: ${ruleId}`, 'warning');
+            // In a real implementation, this would create an investigation ticket
+        }
+
+        function initializeThreatChart() {
+            const ctx = document.getElementById('threatChart').getContext('2d');
+            threatChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(threatData).map(key => key.replace('_', ' ').toUpperCase()),
+                    datasets: [{
+                        data: Object.values(threatData),
+                        backgroundColor: [
+                            '#ef4444', // prompt_injection
+                            '#f59e0b', // data_exfiltration
+                            '#8b5cf6', // malicious_input
+                            '#06b6d4', // system_manipulation
+                            '#10b981', // privacy_violation
+                            '#f97316'  // rate_limit_abuse
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#cbd5e1',
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function loadInitialData() {
+            // Load security status
+            fetch('/api/security/status')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('alert-count').textContent = data.total_alerts;
+                    alertCount = data.total_alerts;
+                    updateAlertCount();
+                })
+                .catch(error => {
+                    console.error('Error loading security status:', error);
+                });
+        }
+
+        // Auto-resize textarea
+        document.getElementById('message-input').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        // Handle Enter key (Ctrl+Enter to send)
+        document.getElementById('message-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Handle Enter key for sending
+        document.getElementById('message-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.ctrlKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
+

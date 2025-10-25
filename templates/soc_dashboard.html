@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛡️ SOC AI Agents - Security Operations Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --critical-color: #dc2626;
+            --dark-bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg) 0%, #1e293b 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-link {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-content {
+            padding: 1.5rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+
+        .metric-item {
+            text-align: center;
+            padding: 1rem;
+            background: var(--dark-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .metric-value.critical { color: var(--critical-color); }
+        .metric-value.high { color: var(--danger-color); }
+        .metric-value.medium { color: var(--warning-color); }
+        .metric-value.low { color: var(--success-color); }
+
+        .alert-item {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .alert-item.critical {
+            background: rgba(220, 38, 38, 0.1);
+            border-left-color: var(--critical-color);
+        }
+
+        .alert-item.high {
+            background: rgba(239, 68, 68, 0.1);
+            border-left-color: var(--danger-color);
+        }
+
+        .alert-item.medium {
+            background: rgba(245, 158, 11, 0.1);
+            border-left-color: var(--warning-color);
+        }
+
+        .alert-item.low {
+            background: rgba(16, 185, 129, 0.1);
+            border-left-color: var(--success-color);
+        }
+
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-severity {
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .alert-time {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .alert-title {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .alert-description {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        .alert-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.8;
+            transform: translateY(-1px);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1rem 0;
+        }
+
+        .system-status {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: var(--dark-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .status-label {
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-value {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .status-value.online {
+            color: var(--success-color);
+        }
+
+        .status-value.offline {
+            color: var(--danger-color);
+        }
+
+        .status-value.warning {
+            color: var(--warning-color);
+        }
+
+        .no-data {
+            text-align: center;
+            color: var(--text-secondary);
+            font-style: italic;
+            padding: 2rem;
+        }
+
+        .refresh-btn {
+            padding: 0.5rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: var(--secondary-color);
+        }
+
+        .real-time-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--success-color);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .two-column {
+            grid-column: span 2;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .two-column {
+                grid-column: span 1;
+            }
+            
+            .main-container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-shield-alt"></i>
+                SOC AI Agents Dashboard
+            </div>
+            <div class="nav-links">
+                <a href="/" class="nav-link">
+                    <i class="fas fa-comments"></i>
+                    Chat Interface
+                </a>
+                <a href="/dashboard" class="nav-link active">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="dashboard-grid">
+            <!-- Security Metrics -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-chart-bar"></i>
+                        Security Metrics
+                    </div>
+                    <div class="real-time-indicator">
+                        <div class="pulse-dot"></div>
+                        Live
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <div class="metric-value" id="total-alerts">0</div>
+                            <div class="metric-label">Total Alerts</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value critical" id="critical-alerts">0</div>
+                            <div class="metric-label">Critical</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value high" id="high-alerts">0</div>
+                            <div class="metric-label">High</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value medium" id="medium-alerts">0</div>
+                            <div class="metric-label">Medium</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value low" id="low-alerts">0</div>
+                            <div class="metric-label">Low</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" id="blocked-ips">0</div>
+                            <div class="metric-label">Blocked IPs</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Status -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-server"></i>
+                        System Status
+                    </div>
+                    <button class="refresh-btn" onclick="refreshSystemStatus()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <div class="card-content">
+                    <div class="system-status">
+                        <div class="status-row">
+                            <div class="status-label">
+                                <i class="fas fa-brain"></i>
+                                SOC Analyst
+                            </div>
+                            <div class="status-value online" id="analyst-status">Online</div>
+                        </div>
+                        <div class="status-row">
+                            <div class="status-label">
+                                <i class="fas fa-shield-alt"></i>
+                                Remediator
+                            </div>
+                            <div class="status-value online" id="remediator-status">Online</div>
+                        </div>
+                        <div class="status-row">
+                            <div class="status-label">
+                                <i class="fas fa-cogs"></i>
+                                Rules Engine
+                            </div>
+                            <div class="status-value online" id="rules-status">Active</div>
+                        </div>
+                        <div class="status-row">
+                            <div class="status-label">
+                                <i class="fas fa-network-wired"></i>
+                                Message Bus
+                            </div>
+                            <div class="status-value online" id="bus-status">Connected</div>
+                        </div>
+                        <div class="status-row">
+                            <div class="status-label">
+                                <i class="fas fa-users"></i>
+                                Active Sessions
+                            </div>
+                            <div class="status-value" id="active-sessions">1</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Threat Distribution Chart -->
+            <div class="dashboard-card two-column">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-chart-pie"></i>
+                        Threat Distribution
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="chart-container">
+                        <canvas id="threatChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Alerts -->
+            <div class="dashboard-card two-column">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Recent Security Alerts
+                    </div>
+                    <button class="refresh-btn" onclick="refreshAlerts()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <div class="card-content">
+                    <div id="alerts-container">
+                        <div class="no-data">
+                            <i class="fas fa-shield-check" style="font-size: 2rem; margin-bottom: 1rem; color: var(--success-color);"></i>
+                            <div>No security alerts detected</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Threat Intelligence -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-search"></i>
+                        Threat Intelligence
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <div class="metric-value" id="prompt-injection">0</div>
+                            <div class="metric-label">Prompt Injection</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" id="data-exfiltration">0</div>
+                            <div class="metric-label">Data Exfiltration</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" id="malicious-input">0</div>
+                            <div class="metric-label">Malicious Input</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" id="system-manipulation">0</div>
+                            <div class="metric-label">System Manipulation</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Rules -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-list-check"></i>
+                        Security Rules
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="system-status">
+                        <div class="status-row">
+                            <div class="status-label">
+                                <i class="fas fa-shield"></i>
+                                Total Rules
+                            </div>
+                            <div class="status-value" id="total-rules">0</div>
+                        </div>
+                        <div class="status-row">
+                            <div class="status-label">
+                                <i class="fas fa-check-circle"></i>
+                                Active Rules
+                            </div>
+                            <div class="status-value" id="active-rules">0</div>
+                        </div>
+                        <div class="status-row">
+                            <div class="status-label">
+                                <i class="fas fa-clock"></i>
+                                Last Update
+                            </div>
+                            <div class="status-value" id="last-update">Never</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let threatChart = null;
+        let threatData = {
+            'prompt_injection': 0,
+            'data_exfiltration': 0,
+            'malicious_input': 0,
+            'system_manipulation': 0,
+            'privacy_violation': 0,
+            'rate_limit_abuse': 0
+        };
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeThreatChart();
+            loadDashboardData();
+            startAutoRefresh();
+        });
+
+        // Socket connection
+        socket.on('connect', function() {
+            console.log('Connected to SOC dashboard');
+        });
+
+        socket.on('security_alert', function(data) {
+            console.log('Security alert received:', data);
+            updateMetrics(data);
+            addAlertToDashboard(data);
+        });
+
+        function initializeThreatChart() {
+            const ctx = document.getElementById('threatChart').getContext('2d');
+            threatChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(threatData).map(key => key.replace('_', ' ').toUpperCase()),
+                    datasets: [{
+                        data: Object.values(threatData),
+                        backgroundColor: [
+                            '#ef4444', // prompt_injection
+                            '#f59e0b', // data_exfiltration
+                            '#8b5cf6', // malicious_input
+                            '#06b6d4', // system_manipulation
+                            '#10b981', // privacy_violation
+                            '#f97316'  // rate_limit_abuse
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#cbd5e1',
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function loadDashboardData() {
+            // Load security metrics
+            fetch('/api/security/metrics')
+                .then(response => response.json())
+                .then(data => {
+                    updateDashboardMetrics(data);
+                })
+                .catch(error => {
+                    console.error('Error loading metrics:', error);
+                });
+
+            // Load security status
+            fetch('/api/security/status')
+                .then(response => response.json())
+                .then(data => {
+                    updateSystemStatus(data);
+                })
+                .catch(error => {
+                    console.error('Error loading status:', error);
+                });
+
+            // Load recent alerts
+            refreshAlerts();
+        }
+
+        function updateDashboardMetrics(data) {
+            document.getElementById('total-alerts').textContent = data.total_alerts || 0;
+            document.getElementById('active-sessions').textContent = data.active_sessions || 0;
+            document.getElementById('total-rules').textContent = data.rules_loaded || 0;
+            document.getElementById('active-rules').textContent = data.rules_loaded || 0;
+            document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+
+            // Update severity counts
+            const severityCounts = data.alerts_by_severity || {};
+            document.getElementById('critical-alerts').textContent = severityCounts.critical || 0;
+            document.getElementById('high-alerts').textContent = severityCounts.high || 0;
+            document.getElementById('medium-alerts').textContent = severityCounts.medium || 0;
+            document.getElementById('low-alerts').textContent = severityCounts.low || 0;
+
+            // Update threat type counts
+            const threatCounts = data.alerts_by_threat_type || {};
+            document.getElementById('prompt-injection').textContent = threatCounts.prompt_injection || 0;
+            document.getElementById('data-exfiltration').textContent = threatCounts.data_exfiltration || 0;
+            document.getElementById('malicious-input').textContent = threatCounts.malicious_input || 0;
+            document.getElementById('system-manipulation').textContent = threatCounts.system_manipulation || 0;
+
+            // Update threat chart
+            if (threatChart) {
+                threatChart.data.datasets[0].data = Object.values(threatData);
+                threatChart.update();
+            }
+        }
+
+        function updateSystemStatus(data) {
+            // Update system status indicators
+            document.getElementById('analyst-status').textContent = data.analyst_status || 'Online';
+            document.getElementById('remediator-status').textContent = data.remediator_status || 'Online';
+            document.getElementById('rules-status').textContent = data.status || 'Active';
+            document.getElementById('bus-status').textContent = 'Connected';
+        }
+
+        function updateMetrics(alert) {
+            // Update threat data
+            if (threatData.hasOwnProperty(alert.threat_type)) {
+                threatData[alert.threat_type]++;
+            }
+            
+            // Update chart
+            if (threatChart) {
+                threatChart.data.datasets[0].data = Object.values(threatData);
+                threatChart.update();
+            }
+        }
+
+        function addAlertToDashboard(alert) {
+            const alertsContainer = document.getElementById('alerts-container');
+            
+            // Remove "no data" message if it exists
+            const noData = alertsContainer.querySelector('.no-data');
+            if (noData) {
+                noData.remove();
+            }
+            
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert-item ${alert.severity.toLowerCase()}`;
+            
+            alertDiv.innerHTML = `
+                <div class="alert-header">
+                    <div class="alert-severity">${getSeverityIcon(alert.severity)} ${alert.severity.toUpperCase()}</div>
+                    <div class="alert-time">${new Date(alert.timestamp).toLocaleTimeString()}</div>
+                </div>
+                <div class="alert-title">${alert.title}</div>
+                <div class="alert-description">${alert.description}</div>
+                <div class="alert-actions">
+                    <button class="btn btn-danger" onclick="blockThreat('${alert.rule_id}')">
+                        <i class="fas fa-ban"></i> Block
+                    </button>
+                    <button class="btn btn-warning" onclick="investigateThreat('${alert.rule_id}')">
+                        <i class="fas fa-search"></i> Investigate
+                    </button>
+                    <button class="btn btn-primary" onclick="acknowledgeAlert('${alert.alert_id}')">
+                        <i class="fas fa-check"></i> Acknowledge
+                    </button>
+                </div>
+            `;
+            
+            alertsContainer.insertBefore(alertDiv, alertsContainer.firstChild);
+            
+            // Keep only last 10 alerts
+            const alerts = alertsContainer.querySelectorAll('.alert-item');
+            if (alerts.length > 10) {
+                alerts[alerts.length - 1].remove();
+            }
+        }
+
+        function getSeverityIcon(severity) {
+            const icons = {
+                'critical': '<i class="fas fa-exclamation-circle"></i>',
+                'high': '<i class="fas fa-exclamation-triangle"></i>',
+                'medium': '<i class="fas fa-exclamation"></i>',
+                'low': '<i class="fas fa-info-circle"></i>'
+            };
+            return icons[severity.toLowerCase()] || '<i class="fas fa-info"></i>';
+        }
+
+        function refreshAlerts() {
+            fetch('/api/security/alerts')
+                .then(response => response.json())
+                .then(data => {
+                    const alertsContainer = document.getElementById('alerts-container');
+                    alertsContainer.innerHTML = '';
+                    
+                    if (data.alerts && data.alerts.length > 0) {
+                        data.alerts.forEach(alert => {
+                            addAlertToDashboard(alert);
+                        });
+                    } else {
+                        alertsContainer.innerHTML = `
+                            <div class="no-data">
+                                <i class="fas fa-shield-check" style="font-size: 2rem; margin-bottom: 1rem; color: var(--success-color);"></i>
+                                <div>No security alerts detected</div>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading alerts:', error);
+                });
+        }
+
+        function refreshSystemStatus() {
+            loadDashboardData();
+        }
+
+        function blockThreat(ruleId) {
+            fetch('/api/security/block', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    threat_type: 'rule',
+                    threat_id: ruleId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Threat blocked:', data);
+                showNotification(`Threat blocked: ${ruleId}`, 'success');
+            })
+            .catch(error => {
+                console.error('Error blocking threat:', error);
+                showNotification('Error blocking threat', 'danger');
+            });
+        }
+
+        function investigateThreat(ruleId) {
+            fetch('/api/security/investigate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    threat_id: ruleId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Investigation started:', data);
+                showNotification(`Investigation started: ${ruleId}`, 'warning');
+            })
+            .catch(error => {
+                console.error('Error starting investigation:', error);
+                showNotification('Error starting investigation', 'danger');
+            });
+        }
+
+        function acknowledgeAlert(alertId) {
+            showNotification(`Alert acknowledged: ${alertId}`, 'success');
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                color: white;
+                font-weight: 500;
+                z-index: 1000;
+                animation: slideInRight 0.3s ease-out;
+            `;
+            
+            if (type === 'success') notification.style.background = 'var(--success-color)';
+            else if (type === 'warning') notification.style.background = 'var(--warning-color)';
+            else if (type === 'danger') notification.style.background = 'var(--danger-color)';
+            else notification.style.background = 'var(--primary-color)';
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        function startAutoRefresh() {
+            // Refresh dashboard data every 30 seconds
+            setInterval(() => {
+                loadDashboardData();
+            }, 30000);
+        }
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,107 @@
+{
+  "environment": {
+    "name": "production_ai_environment",
+    "description": "Default AI agent environment",
+    "scan_paths": [
+      ".",
+      "..",
+      "../..",
+      "./dev_agents",
+      "./code_assistants",
+      "./medical_agents",
+      "./healthcare_ai"
+    ],
+    "monitoring_interval": 1.0,
+    "log_retention_days": 30
+  },
+  "agent_discovery": {
+    "enabled": true,
+    "auto_scan": true,
+    "scan_interval": 300,
+    "file_patterns": [
+      "*agent*.py",
+      "*ai*.py",
+      "*llm*.py",
+      "*gpt*.py",
+      "*claude*.py",
+      "*model*.py",
+      "main.py",
+      "app.py",
+      "server.py"
+    ],
+    "exclude_patterns": [
+      "__pycache__",
+      ".git",
+      "node_modules",
+      "venv",
+      ".env"
+    ]
+  },
+  "security_rules": {
+    "enabled_rules": [
+      "PROMPT_INJ_001",
+      "PROMPT_INJ_002",
+      "DATA_EXF_001",
+      "DATA_EXF_002",
+      "SYS_MAN_001",
+      "SYS_MAN_002",
+      "MED_001",
+      "FIN_001",
+      "RATE_001",
+      "MAL_INP_001",
+      "PRIVACY_VIOLATION"
+    ],
+    "custom_rules": []
+  },
+  "monitoring": {
+    "log_levels": [
+      "INFO",
+      "WARNING",
+      "ERROR"
+    ],
+    "alert_thresholds": {
+      "high_severity": 1,
+      "medium_severity": 5,
+      "low_severity": 10
+    },
+    "rate_limiting": {
+      "enabled": true,
+      "requests_per_minute": 50,
+      "burst_limit": 100
+    }
+  },
+  "remediation": {
+    "auto_remediate": false,
+    "require_approval": true,
+    "approval_timeout": 600,
+    "escalation_levels": [
+      "security_team",
+      "security_manager",
+      "ciso"
+    ]
+  },
+  "integrations": {
+    "slack": {
+      "enabled": false,
+      "webhook_url": "",
+      "channels": [
+        "#security-alerts"
+      ]
+    },
+    "email": {
+      "enabled": false,
+      "smtp_server": "",
+      "recipients": []
+    },
+    "webhook": {
+      "enabled": false,
+      "url": "",
+      "headers": {}
+    },
+    "compliance_notifications": {
+      "enabled": true,
+      "hipaa_compliance": true,
+      "audit_logging": true
+    }
+  }
+}

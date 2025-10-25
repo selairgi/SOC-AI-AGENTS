@@ -1,0 +1,21 @@
+# Core dependencies for SOC AI Agents
+asyncio
+logging
+json
+time
+random
+pathlib
+dataclasses
+typing
+enum
+re
+subprocess
+
+# Security and validation dependencies
+jsonschema>=4.0.0
+
+# Web interface dependencies (optional)
+flask>=2.0.0
+flask-socketio>=5.0.0
+python-socketio>=5.0.0
+eventlet>=0.33.0

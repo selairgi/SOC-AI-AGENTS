@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /s /b \"C:\\Users\\LENOVO\\Desktop\\SOC ai agents\")",
+      "Bash(dir /b \"C:\\Users\\LENOVO\\Desktop\\SOC ai agents\")",
+      "Bash(python enhanced_web_chatbot.py:*)",
+      "Bash(timeout 10 python:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
