@@ -1,15 +1,29 @@
-# 🛡️ Enhanced SOC AI Agents - Complete Setup Guide
+# 🛡️ SOC AI Agents - Production-Ready Security Operations Center
 
 ## Overview
 
-This is a **production-ready** SOC (Security Operations Center) system for AI agents with **real-world integrations**:
+A **production-ready** SOC (Security Operations Center) system with AI-powered security monitoring, real-time threat detection, and automated remediation capabilities.
 
-- ✅ **Real OpenAI API Integration** - Actual AI responses with comprehensive logging
-- ✅ **False Positive Detection** - ML-based confidence scoring to reduce noise
-- ✅ **Real Remediation Actions** - Actual IP blocking, rate limiting, session termination
-- ✅ **Interactive Web UI** - Beautiful interface with SOC toggle and attack testing
-- ✅ **Real-Time Monitoring** - WebSocket-based live security alerts
-- ✅ **Attack Scenario Testing** - Built-in penetration testing interface
+### Core Capabilities
+
+- 🤖 **Multi-Agent Architecture** - Autonomous SOC Builder, Analyst, and Remediator agents
+- 🌐 **Web Interface** - Modern, interactive chatbot with real-time security monitoring
+- 🛡️ **Real-Time Threat Detection** - Pattern-based and ML-enhanced security analysis
+- ⚡ **Automated Remediation** - Intelligent response actions (IP blocking, rate limiting, session termination)
+- 🧠 **Real OpenAI Integration** - Actual AI-powered responses with comprehensive logging
+- 🎯 **False Positive Detection** - ML-based confidence scoring to reduce alert noise
+- 📊 **Live Security Dashboard** - Real-time alerts, metrics, and system status
+- 🧪 **Attack Scenario Testing** - Built-in penetration testing interface
+
+### Key Features
+
+✅ **Web-Based Security Chatbot** - Interactive AI assistant with integrated SOC monitoring
+✅ **Real-Time WebSocket Alerts** - Live security notifications and threat updates
+✅ **Attack Vector Detection** - Identifies prompt injection, data exfiltration, system manipulation, XSS, SQL injection
+✅ **Intelligent Remediation** - Context-aware automated response actions
+✅ **Enterprise-Grade Reliability** - Idempotency, retry logic, circuit breakers, backpressure handling
+✅ **Policy Enforcement** - Rule-based action policies with approval workflows
+✅ **Multi-Environment Support** - Presets for medical, financial, development, and production environments
 
 ## 🚀 Quick Start
 
@@ -55,8 +69,9 @@ copy .env.example .env
 
 ### 4. Run the Application
 
+#### Option A: Web Interface (Recommended)
 ```bash
-# Run the enhanced web chatbot
+# Run the enhanced web chatbot with SOC monitoring
 python enhanced_web_chatbot.py
 ```
 
@@ -75,11 +90,112 @@ python enhanced_web_chatbot.py
 ======================================================================
 ```
 
-### 5. Access the Application
+#### Option B: Command-Line Mode
+```bash
+# Run the core SOC agents system
+python main.py
+
+# Run with specific environment preset
+python main.py --environment production
+
+# Run with custom duration (in seconds)
+python main.py --duration 30
+
+# Run indefinitely
+python main.py --duration 0
+
+# Enable real remediation mode (use with caution)
+python main.py --real
+```
+
+### 5. Access the Web Interface
 
 Open your web browser and navigate to: **http://localhost:5000**
 
-## 🎯 Features Walkthrough
+## 📋 Complete Feature List
+
+### Web Interface Features
+- **Interactive Chat Interface** - Modern, responsive UI with real-time messaging
+- **SOC Monitoring Toggle** - Enable/disable security monitoring on the fly
+- **Live Security Alerts Panel** - Real-time threat notifications with severity levels
+- **Security Metrics Dashboard** - Track total alerts, false positives, actions taken, blocks
+- **Attack Scenario Testing** - Built-in buttons to test:
+  - Prompt Injection attacks
+  - Data Exfiltration attempts
+  - System Manipulation commands
+  - Malicious Input (XSS, SQL injection, path traversal)
+- **False Positive Indicators** - Visual confidence scoring (0-100%)
+- **Remediation Status Display** - See what actions were taken in real-time
+- **WebSocket Live Updates** - Instant alert notifications without page refresh
+- **Session Management** - Secure session tracking and termination
+- **User Experience Indicators** - Visual feedback for blocked users, rate limits, etc.
+
+### Core SOC System Features
+- **Multi-Agent Architecture**:
+  - **SOC Builder** - Continuously monitors logs and generates security events
+  - **SOC Analyst** - Analyzes alerts and creates remediation playbooks
+  - **Remediator** - Executes remediation actions with validation
+- **Real AI Integration**:
+  - OpenAI GPT-3.5/4 support with fallback mode
+  - Comprehensive interaction logging
+  - Token usage and cost tracking
+  - Multiple security modes (default, security_aware, strict)
+- **Threat Detection**:
+  - Prompt Injection Detection
+  - Data Exfiltration Prevention
+  - System Manipulation Blocking
+  - Privacy Violation Detection
+  - Rate Limit Abuse Detection
+  - Malicious Input Filtering (XSS, SQL injection, path traversal)
+- **False Positive Detection**:
+  - ML-based confidence scoring
+  - Context-aware analysis
+  - User behavior profiling
+  - Pattern legitimacy assessment
+  - Recommended actions (block, investigate, monitor, ignore)
+- **Remediation Actions**:
+  - IP Blocking (temporary or permanent)
+  - Rate Limiting (configurable limits and windows)
+  - Session Termination
+  - User Suspension
+  - Agent Isolation
+- **Advanced Reliability Features**:
+  - **Idempotency & Deduplication** - Prevents duplicate action execution
+  - **Retry Logic with Backoff** - Handles transient failures gracefully
+  - **Circuit Breaker** - Prevents cascading failures
+  - **Async Execution** - Non-blocking, high-performance operations
+  - **Bounded Queues** - Memory-bounded processing with backpressure
+  - **Action Policies** - Rule-based enforcement with approval workflows
+- **Environment Configurations**:
+  - Medical environment preset
+  - Financial environment preset
+  - Development environment preset
+  - Production environment preset
+  - Custom configuration support
+
+### Security Features
+- **Input Validation** - Schema validation for all alerts and playbooks
+- **Action Whitelist** - Only allowed actions can be executed
+- **Input Sanitization** - Prevents injection attacks
+- **Audit Trail** - Complete execution history tracking
+- **Blocked Entity Management** - Track and manage blocked IPs, users, sessions
+- **Rate Limit Enforcement** - Per-IP and per-user rate limiting
+- **Policy Evaluation** - Context-aware action approval
+
+### Monitoring & Observability
+- **Comprehensive Metrics**:
+  - Total alerts generated
+  - False positive rates
+  - Actions taken statistics
+  - Blocked entities count
+  - Rate limit violations
+  - Circuit breaker status
+  - Queue utilization
+- **Real-Time Status API** - Query system health and statistics
+- **Detailed Logging** - Structured logging with multiple levels
+- **Performance Tracking** - Response times, token usage, costs
+
+## 🎯 Web Interface Walkthrough
 
 ### 1. SOC Monitoring Toggle
 
@@ -275,37 +391,49 @@ self.thresholds = {
 
 ## 📊 Understanding the System
 
-### Architecture
+### System Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    User Interface                        │
-│              (Enhanced Web Chatbot)                      │
-└───────────────────┬─────────────────────────────────────┘
-                    │
-                    ▼
-┌─────────────────────────────────────────────────────────┐
-│                  AI Integration                          │
-│        (OpenAI API + Comprehensive Logging)             │
-└───────────────────┬─────────────────────────────────────┘
-                    │
-                    ▼
-┌─────────────────────────────────────────────────────────┐
-│              Security Rules Engine                       │
-│         (Pattern Matching + Threat Detection)           │
-└───────────────────┬─────────────────────────────────────┘
-                    │
-                    ▼
-┌─────────────────────────────────────────────────────────┐
-│          False Positive Detector                         │
-│    (ML-based Confidence Scoring + Context Analysis)     │
-└───────────────────┬─────────────────────────────────────┘
-                    │
-                    ▼
-┌─────────────────────────────────────────────────────────┐
-│            Real Remediation Engine                       │
-│    (Rate Limiting, IP Blocking, Session Termination)    │
-└─────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│                      WEB INTERFACE                             │
+│         (Flask + SocketIO + Enhanced Chatbot UI)              │
+│  - Real-time Chat  - Security Alerts  - Attack Testing       │
+└──────────────────────┬─────────────────────────────────────────┘
+                       │
+                       ▼
+┌────────────────────────────────────────────────────────────────┐
+│                   AI INTEGRATION LAYER                         │
+│              (OpenAI API + Comprehensive Logging)             │
+│         - GPT-3.5/4 Support  - Token Tracking  - Costs        │
+└──────────────────────┬─────────────────────────────────────────┘
+                       │
+                       ▼
+┌────────────────────────────────────────────────────────────────┐
+│                   SOC AGENTS SYSTEM                            │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
+│  │ SOC Builder  │→ │ SOC Analyst  │→ │  Remediator  │       │
+│  │ (Log Monitor)│  │  (Analysis)  │  │  (Actions)   │       │
+│  └──────────────┘  └──────────────┘  └──────────────┘       │
+│         ↓                  ↓                  ↓                │
+│    Message Bus      Playbook Queue    Action Execution       │
+└──────────────────────┬─────────────────────────────────────────┘
+                       │
+                       ▼
+┌────────────────────────────────────────────────────────────────┐
+│              SECURITY ANALYSIS ENGINE                          │
+│  ┌──────────────────┐    ┌────────────────────────┐          │
+│  │  Security Rules  │    │ False Positive Detector│          │
+│  │  (Pattern Match) │    │   (ML-based Scoring)   │          │
+│  └──────────────────┘    └────────────────────────┘          │
+└──────────────────────┬─────────────────────────────────────────┘
+                       │
+                       ▼
+┌────────────────────────────────────────────────────────────────┐
+│              REMEDIATION & ENFORCEMENT                         │
+│  - IP Blocking       - Session Termination                    │
+│  - Rate Limiting     - User Suspension                         │
+│  - Circuit Breakers  - Policy Enforcement                     │
+└────────────────────────────────────────────────────────────────┘
 ```
 
 ### Data Flow
@@ -321,33 +449,110 @@ self.thresholds = {
 
 ### Key Components
 
-**1. real_ai_integration.py**
-- Manages OpenAI API connections
-- Logs all interactions with full metadata
-- Tracks costs and token usage
-- Supports fallback mode without API key
+#### Web Interface Layer
+**1. enhanced_web_chatbot.py**
+- Flask application with SocketIO for real-time communication
+- Orchestrates all SOC components
+- Provides REST API endpoints and WebSocket events
+- Manages attack scenario testing
+- Handles session management and user tracking
 
-**2. false_positive_detector.py**
-- Analyzes alerts for false positives
-- Uses multiple factors:
-  - Pattern legitimacy
-  - User behavior history
-  - Context awareness
-  - Threat indicators
-- Recommends actions: block, investigate, monitor, ignore
+**2. templates/enhanced_chatbot.html**
+- Modern, responsive web interface
+- Real-time chat functionality
+- Security alerts panel with live updates
+- Attack testing interface
+- Security metrics dashboard
 
-**3. real_remediation.py**
-- Actually blocks IPs and users
-- Implements rate limiting
-- Terminates sessions
-- Tracks all actions with audit trail
-- Auto-expires temporary blocks
+#### AI & Security Layer
+**3. real_ai_integration.py**
+- Manages OpenAI API connections (GPT-3.5/4)
+- Comprehensive interaction logging with metadata
+- Token usage and cost tracking
+- Security mode support (default, security_aware, strict)
+- Fallback mode without API key
 
-**4. enhanced_web_chatbot.py**
-- Orchestrates all components
-- Handles WebSocket real-time updates
-- Provides REST API endpoints
-- Manages testing scenarios
+**4. security_rules.py**
+- Pattern-based threat detection
+- Multiple threat type identification
+- Severity classification
+- Evidence collection and analysis
+
+**5. false_positive_detector.py**
+- ML-based confidence scoring
+- Context-aware alert analysis
+- User behavior profiling
+- Pattern legitimacy assessment
+- Action recommendations (block, investigate, monitor, ignore)
+
+#### SOC Agents
+**6. soc_builder.py**
+- Continuous log monitoring
+- Security event generation
+- Environment-specific scanning
+- Message bus integration
+
+**7. soc_analyst.py**
+- Alert analysis and triage
+- Threat-specific response logic
+- Playbook generation
+- Remediation orchestration
+
+**8. remediator.py**
+- Executes remediation actions
+- Integrates with advanced reliability features
+- Async action execution
+- Comprehensive action tracking
+
+#### Remediation & Enforcement
+**9. real_remediation.py**
+- Real IP blocking and unblocking
+- Rate limiting enforcement (per-IP, per-user)
+- Session termination
+- User suspension management
+- Automatic expiration of temporary blocks
+- Complete audit trail
+
+**10. action_policy.py**
+- Rule-based policy enforcement
+- IP range and user pattern matching
+- Approval workflow for sensitive actions
+- Policy evaluation engine
+
+#### Reliability & Monitoring
+**11. execution_tracker.py**
+- Idempotency and deduplication
+- Execution record management with TTL
+- Playbook state tracking
+- Comprehensive statistics
+
+**12. retry_circuit_breaker.py**
+- Retry logic with exponential backoff
+- Circuit breaker for failing targets
+- Per-target state tracking
+- Automatic circuit recovery
+
+**13. bounded_queue.py**
+- Memory-bounded queue management
+- Backpressure handling strategies
+- Queue utilization monitoring
+- Saturation alerts
+
+#### Configuration & Models
+**14. models.py**
+- Data models for alerts, playbooks, logs
+- Threat type enumeration
+- Agent type definitions
+
+**15. environment_config.py**
+- Environment-specific presets
+- Scan path configuration
+- Settings management
+
+**16. message_bus.py**
+- Agent communication backbone
+- Async message passing
+- Event distribution
 
 ## 🐛 Troubleshooting
 
@@ -404,29 +609,63 @@ self.thresholds = {
 
 ## 📈 Monitoring & Metrics
 
-### Available Endpoints
+### Web API Endpoints
 
+#### Chat Interface
+```
+POST /api/chat
+- Send chat message
+- Receives: { "message": "string", "security_mode": "security_aware|default|strict" }
+- Returns: Full response with AI output, security analysis, remediation status
+```
+
+#### SOC Control
 ```
 GET /api/soc/status
 - Comprehensive SOC status
 - AI statistics
 - Remediation stats
 - Blocked entities
-
-GET /api/security/alerts
-- Recent security alerts
-- False positive analysis
-- Full alert details
+- Rate limits
+- System uptime
 
 POST /api/soc/toggle
 - Enable/disable SOC monitoring
+- Body: { "enabled": true|false }
+```
 
-POST /api/test/scenario/{name}
-- Run attack scenarios
-- Get test results
+#### Security Monitoring
+```
+GET /api/security/alerts
+- Recent security alerts (last 20)
+- False positive analysis
+- Full alert details with metadata
+```
+
+#### Attack Testing
+```
+POST /api/test/scenario/{scenario_name}
+- Run predefined attack scenarios
+- Scenarios: prompt_injection, data_exfiltration, system_manipulation, malicious_input
+- Returns: Test results with alerts triggered, remediations taken, blocks applied
 
 GET /api/test/results
 - All test execution results
+- Historical test data
+```
+
+#### WebSocket Events
+```
+Event: security_alert
+- Real-time security alert notifications
+- Triggered whenever a threat is detected
+- Payload: { alert_id, severity, threat_type, title, description, fp_probability, remediation_taken }
+
+Event: connected
+- Client connection confirmation
+
+Event: disconnect
+- Client disconnection handling
 ```
 
 ### Viewing Logs
