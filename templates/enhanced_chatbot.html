@@ -657,6 +657,140 @@
             margin-bottom: 1rem;
             opacity: 0.5;
         }
+
+        /* Session Termination & Blocking Overlay */
+        .security-lockout-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.98);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            animation: fadeInOverlay 0.5s ease-out;
+        }
+
+        .security-lockout-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeInOverlay {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .lockout-content {
+            text-align: center;
+            padding: 3rem;
+            background: rgba(220, 38, 38, 0.2);
+            border: 3px solid var(--critical-color);
+            border-radius: 20px;
+            max-width: 600px;
+            animation: zoomIn 0.5s ease-out, pulse 2s infinite;
+        }
+
+        @keyframes zoomIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .lockout-icon {
+            font-size: 6rem;
+            color: var(--critical-color);
+            margin-bottom: 1.5rem;
+            animation: shake 0.5s;
+        }
+
+        .lockout-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--critical-color);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .lockout-message {
+            font-size: 1.2rem;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .lockout-details {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-top: 1.5rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .lockout-detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 0.75rem 0;
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .lockout-countdown {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--critical-color);
+            margin-top: 1.5rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Chat disabled state */
+        .chat-container.disabled {
+            pointer-events: none;
+            opacity: 0.5;
+            position: relative;
+        }
+
+        .chat-container.disabled::after {
+            content: '🔒 SESSION TERMINATED';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--critical-color);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 2rem 3rem;
+            border-radius: 16px;
+            border: 3px solid var(--critical-color);
+            z-index: 10;
+            animation: pulse 2s infinite;
+        }
+
+        /* Flash warning animation */
+        @keyframes flashWarning {
+            0%, 100% { background: transparent; }
+            10%, 30%, 50%, 70%, 90% { background: rgba(220, 38, 38, 0.3); }
+        }
+
+        .warning-flash {
+            animation: flashWarning 1s ease-out;
+        }
+
+        /* Glitch effect for blocked state */
+        @keyframes glitch {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+        }
+
+        .glitch-effect {
+            animation: glitch 0.3s;
+        }
     </style>
 </head>
 <body>
@@ -809,6 +943,38 @@
         </div>
     </div>
 
+    <!-- Security Lockout Overlay -->
+    <div class="security-lockout-overlay" id="lockout-overlay">
+        <div class="lockout-content">
+            <div class="lockout-icon">
+                <i class="fas fa-ban"></i>
+            </div>
+            <div class="lockout-title" id="lockout-title">ACCESS DENIED</div>
+            <div class="lockout-message" id="lockout-message">
+                Your session has been terminated due to security policy violations.
+            </div>
+            <div class="lockout-details" id="lockout-details">
+                <div class="lockout-detail-item">
+                    <span>Session ID:</span>
+                    <span id="lockout-session">{{ session_id[:12] }}</span>
+                </div>
+                <div class="lockout-detail-item">
+                    <span>Reason:</span>
+                    <span id="lockout-reason">Security violation detected</span>
+                </div>
+                <div class="lockout-detail-item">
+                    <span>Timestamp:</span>
+                    <span id="lockout-timestamp">-</span>
+                </div>
+                <div class="lockout-detail-item">
+                    <span>Status:</span>
+                    <span id="lockout-status" style="color: var(--critical-color); font-weight: bold;">BLOCKED</span>
+                </div>
+            </div>
+            <div class="lockout-countdown" id="lockout-countdown"></div>
+        </div>
+    </div>
+
     <script>
         const socket = io();
         const sessionId = '{{ session_id }}';
@@ -864,6 +1030,24 @@
             showNotification(`🚨 ${data.severity.toUpperCase()}: ${data.title}`, data.severity);
         });
 
+        // Handle session termination
+        socket.on('session_terminated', function(data) {
+            console.log('🔒 SESSION TERMINATED:', data);
+            triggerSessionTermination(data);
+        });
+
+        // Handle IP blocking
+        socket.on('ip_blocked', function(data) {
+            console.log('🚫 IP BLOCKED:', data);
+            triggerIPBlock(data);
+        });
+
+        // Handle user suspension
+        socket.on('user_suspended', function(data) {
+            console.log('⛔ USER SUSPENDED:', data);
+            triggerUserSuspension(data);
+        });
+
         // Chat functionality
         function sendMessage() {
             const input = document.getElementById('message-input');
@@ -883,6 +1067,24 @@
             .then(response => response.json())
             .then(data => {
                 hideTypingIndicator();
+
+                // Log full response to console for debugging
+                console.log('🛡️ SOC Response:', data);
+
+                // Log remediation actions clearly
+                if (data.security_check.remediation_taken) {
+                    console.log('🚨 REMEDIATION ACTIONS TAKEN:');
+                    data.security_check.remediation_actions.forEach(action => {
+                        console.log(`  ${action.type}: ${action.description}`);
+                        console.log(`    Target: ${action.target}`);
+                    });
+                }
+
+                // Log blocking status
+                if (data.security_check.blocked) {
+                    console.log('🚫 ACCESS BLOCKED:', data.security_check.block_reason);
+                }
+
                 addMessage(data.response, 'bot', data.security_check);
 
                 if (data.security_check.blocked) {
@@ -922,6 +1124,43 @@
                 badge.className = 'security-badge alert';
                 badge.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Security Alert Detected`;
                 content.appendChild(badge);
+
+                // Show remediation actions if any were taken
+                if (securityInfo.remediation_taken && securityInfo.remediation_actions && securityInfo.remediation_actions.length > 0) {
+                    const remediationDiv = document.createElement('div');
+                    remediationDiv.style.marginTop = '0.5rem';
+                    remediationDiv.style.padding = '0.5rem';
+                    remediationDiv.style.background = 'rgba(239, 68, 68, 0.1)';
+                    remediationDiv.style.borderRadius = '4px';
+                    remediationDiv.style.fontSize = '0.85rem';
+
+                    let actionsHtml = '<div style="color: var(--danger-color); font-weight: 600; margin-bottom: 0.25rem;"><i class="fas fa-shield-alt"></i> Remediation Actions Taken:</div>';
+                    securityInfo.remediation_actions.forEach(action => {
+                        let icon = '';
+                        if (action.type === 'rate_limit') icon = '⏱️';
+                        else if (action.type === 'block_ip') icon = '🚫';
+                        else if (action.type === 'terminate_session') icon = '🔒';
+                        else if (action.type === 'suspend_user') icon = '⛔';
+                        else if (action.type === 'monitor') icon = '👁️';
+
+                        actionsHtml += `<div style="margin-left: 1rem; margin-top: 0.25rem;">${icon} ${action.description}</div>`;
+                    });
+                    remediationDiv.innerHTML = actionsHtml;
+                    content.appendChild(remediationDiv);
+                }
+
+                // Show blocked warning
+                if (securityInfo.blocked) {
+                    const blockWarning = document.createElement('div');
+                    blockWarning.style.marginTop = '0.5rem';
+                    blockWarning.style.padding = '0.75rem';
+                    blockWarning.style.background = 'var(--critical-color)';
+                    blockWarning.style.borderRadius = '4px';
+                    blockWarning.style.fontSize = '0.9rem';
+                    blockWarning.style.fontWeight = '600';
+                    blockWarning.innerHTML = `<i class="fas fa-ban"></i> ${securityInfo.block_reason || 'Access blocked'}`;
+                    content.appendChild(blockWarning);
+                }
             } else if (securityInfo && !securityInfo.alert_detected) {
                 const badge = document.createElement('div');
                 badge.className = 'security-badge safe';
@@ -946,6 +1185,15 @@
             const fpProb = alert.false_positive_probability || 0;
             const fpLevel = fpProb > 0.7 ? 'high' : fpProb > 0.3 ? 'medium' : 'low';
 
+            let remediationHtml = '';
+            if (alert.remediation_taken) {
+                remediationHtml = '<div style="margin-top: 0.5rem; padding: 0.5rem; background: rgba(245, 158, 11, 0.1); border-radius: 4px;"><div style="font-size: 0.8rem; color: var(--warning-color); font-weight: 600; margin-bottom: 0.25rem;"><i class="fas fa-shield-alt"></i> Remediation Actions:</div>';
+                // Note: In WebSocket event, we don't get remediation_actions array, only remediation_taken boolean
+                // This would need to be added to the WebSocket event payload
+                remediationHtml += '<div style="font-size: 0.75rem; margin-left: 1rem; color: var(--text-secondary);">Check console log for details</div>';
+                remediationHtml += '</div>';
+            }
+
             alertDiv.innerHTML = `
                 <div class="alert-header">
                     <div class="alert-severity">${alert.severity} - ${alert.threat_type}</div>
@@ -953,7 +1201,7 @@
                 </div>
                 <div style="font-weight: 600; margin-bottom: 0.5rem;">${alert.title}</div>
                 <div style="font-size: 0.85rem; color: var(--text-secondary);">${alert.description}</div>
-                ${alert.remediation_taken ? '<div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--warning-color);"><i class="fas fa-shield-alt"></i> Remediation Applied</div>' : ''}
+                ${remediationHtml}
             `;
 
             container.insertBefore(alertDiv, container.firstChild);
@@ -1062,6 +1310,133 @@
                 sendMessage();
             }
         });
+
+        // Blocking and Termination Functions
+        function triggerSessionTermination(data) {
+            // Flash warning
+            document.body.classList.add('warning-flash');
+            setTimeout(() => document.body.classList.remove('warning-flash'), 1000);
+
+            // Disable chat
+            const chatContainer = document.querySelector('.chat-container');
+            chatContainer.classList.add('disabled', 'glitch-effect');
+
+            // Show lockout overlay
+            setTimeout(() => {
+                showLockoutOverlay({
+                    title: '🔒 SESSION TERMINATED',
+                    message: data.reason || 'Your session has been terminated due to security policy violations.',
+                    reason: data.reason || 'Security violation detected',
+                    type: 'session_terminated'
+                });
+            }, 1000);
+
+            // Play alert sound (optional)
+            try {
+                const audio = new Audio('data:audio/wav;base64,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');
+                audio.play().catch(e => console.log('Audio play failed:', e));
+            } catch(e) {
+                console.log('Audio not available:', e);
+            }
+        }
+
+        function triggerIPBlock(data) {
+            // Flash warning
+            document.body.classList.add('warning-flash');
+            setTimeout(() => document.body.classList.remove('warning-flash'), 1000);
+
+            // Disable everything
+            const chatContainer = document.querySelector('.chat-container');
+            chatContainer.classList.add('disabled', 'glitch-effect');
+
+            // Show lockout overlay with IP info
+            setTimeout(() => {
+                showLockoutOverlay({
+                    title: '🚫 IP ADDRESS BLOCKED',
+                    message: `Your IP address has been blocked due to ${data.reason || 'multiple security violations'}.`,
+                    reason: data.reason || 'Multiple security policy violations',
+                    type: 'ip_blocked',
+                    duration: data.duration || 3600,
+                    ip: data.ip
+                });
+            }, 1000);
+        }
+
+        function triggerUserSuspension(data) {
+            // Flash warning
+            document.body.classList.add('warning-flash');
+            setTimeout(() => document.body.classList.remove('warning-flash'), 1000);
+
+            // Disable chat
+            const chatContainer = document.querySelector('.chat-container');
+            chatContainer.classList.add('disabled', 'glitch-effect');
+
+            // Show lockout overlay
+            setTimeout(() => {
+                showLockoutOverlay({
+                    title: '⛔ ACCOUNT SUSPENDED',
+                    message: data.reason || 'Your account has been suspended due to security policy violations.',
+                    reason: data.reason || 'Security policy violations',
+                    type: 'user_suspended'
+                });
+            }, 1000);
+        }
+
+        function showLockoutOverlay(config) {
+            const overlay = document.getElementById('lockout-overlay');
+            const title = document.getElementById('lockout-title');
+            const message = document.getElementById('lockout-message');
+            const reason = document.getElementById('lockout-reason');
+            const timestamp = document.getElementById('lockout-timestamp');
+            const countdown = document.getElementById('lockout-countdown');
+
+            // Update content
+            title.textContent = config.title;
+            message.textContent = config.message;
+            reason.textContent = config.reason;
+            timestamp.textContent = new Date().toLocaleString();
+
+            // Add IP info if available
+            if (config.ip) {
+                const ipItem = document.createElement('div');
+                ipItem.className = 'lockout-detail-item';
+                ipItem.innerHTML = `<span>Blocked IP:</span><span style="color: var(--critical-color); font-weight: bold;">${config.ip}</span>`;
+                document.getElementById('lockout-details').appendChild(ipItem);
+            }
+
+            // Show countdown if duration is provided
+            if (config.duration) {
+                let remaining = config.duration;
+                countdown.textContent = formatDuration(remaining);
+
+                const countdownInterval = setInterval(() => {
+                    remaining--;
+                    if (remaining <= 0) {
+                        clearInterval(countdownInterval);
+                        countdown.textContent = '⏱️ EXPIRED';
+                    } else {
+                        countdown.textContent = formatDuration(remaining);
+                    }
+                }, 1000);
+            }
+
+            // Show overlay
+            overlay.classList.add('active');
+        }
+
+        function formatDuration(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+
+            if (hours > 0) {
+                return `⏱️ ${hours}h ${minutes}m ${secs}s`;
+            } else if (minutes > 0) {
+                return `⏱️ ${minutes}m ${secs}s`;
+            } else {
+                return `⏱️ ${secs}s`;
+            }
+        }
     </script>
 </body>
 </html>

@@ -4,7 +4,16 @@
       "Bash(dir /s /b \"C:\\Users\\LENOVO\\Desktop\\SOC ai agents\")",
       "Bash(dir /b \"C:\\Users\\LENOVO\\Desktop\\SOC ai agents\")",
       "Bash(python enhanced_web_chatbot.py:*)",
-      "Bash(timeout 10 python:*)"
+      "Bash(timeout 10 python:*)",
+      "Bash(dir:*)",
+      "Bash(python example_integration.py:*)",
+      "Bash(python run_medical_integration.py:*)",
+      "Bash(python:*)",
+      "Bash(if exist apikey.env del apikey.env)",
+      "Bash(if exist .env del .env)",
+      "Bash(git --version:*)",
+      "Bash(echo:*)",
+      "Bash(pip install:*)"
     ],
     "deny": [],
     "ask": []

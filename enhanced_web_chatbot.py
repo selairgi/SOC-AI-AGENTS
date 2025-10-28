@@ -140,18 +140,42 @@ class EnhancedSOCWebIntegration:
                 result["security_check"]["blocked"] = True
                 result["security_check"]["block_reason"] = "IP address is blocked"
                 result["response"] = "Access denied: Your IP address has been blocked due to security policy violations."
+
+                # Emit blocking event
+                socketio.emit('ip_blocked', {
+                    'ip': user_ip,
+                    'reason': 'IP address blocked due to security violations',
+                    'timestamp': datetime.now().isoformat()
+                }, room=session_id)
+
                 return result
 
             if self.real_remediator.is_user_blocked(user_id):
                 result["security_check"]["blocked"] = True
                 result["security_check"]["block_reason"] = "User account is suspended"
                 result["response"] = "Access denied: Your account has been suspended due to security violations."
+
+                # Emit user suspension event
+                socketio.emit('user_suspended', {
+                    'user_id': user_id,
+                    'reason': 'Account suspended due to security violations',
+                    'timestamp': datetime.now().isoformat()
+                }, room=session_id)
+
                 return result
 
             if self.real_remediator.is_session_terminated(session_id):
                 result["security_check"]["blocked"] = True
                 result["security_check"]["block_reason"] = "Session has been terminated"
                 result["response"] = "Access denied: Your session has been terminated due to security policy violations."
+
+                # Emit session termination event
+                socketio.emit('session_terminated', {
+                    'session_id': session_id,
+                    'reason': 'Session terminated due to security violations',
+                    'timestamp': datetime.now().isoformat()
+                }, room=session_id)
+
                 return result
 
             # Step 2: Check rate limiting
@@ -385,6 +409,16 @@ class EnhancedSOCWebIntegration:
                     result["blocked"] = True
                     result["block_reason"] = f"Critical security threat detected: {alert.title}"
 
+                    # Emit IP block event to client
+                    socketio.emit('ip_blocked', {
+                        'ip': user_ip,
+                        'reason': f"Critical threat: {alert.title}",
+                        'duration': 3600,
+                        'alert_id': alert.id,
+                        'timestamp': datetime.now().isoformat(),
+                        'severity': alert.severity
+                    }, room=session_id)
+
                 # Terminate session for high threats
                 self.real_remediator.terminate_session(
                     session_id,
@@ -396,6 +430,15 @@ class EnhancedSOCWebIntegration:
                     "target": session_id,
                     "description": "Session terminated"
                 })
+
+                # Emit session termination event to client
+                socketio.emit('session_terminated', {
+                    'session_id': session_id,
+                    'reason': f"Security threat: {alert.title}",
+                    'alert_id': alert.id,
+                    'timestamp': datetime.now().isoformat(),
+                    'severity': alert.severity
+                }, room=session_id)
 
         return result
 

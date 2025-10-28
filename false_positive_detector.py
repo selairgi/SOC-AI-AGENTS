@@ -126,24 +126,33 @@ class FalsePositiveDetector:
         reasoning = []
 
         # Factor 1: Pattern legitimacy (30% weight)
+        # NOTE: pattern_score represents how LEGITIMATE the message looks (0=suspicious, 1=legitimate)
+        # We need to INVERT it to get threat confidence (1=threatening, 0=benign)
         pattern_score, pattern_reasoning = self._analyze_pattern_legitimacy(
             log.message, alert.threat_type
         )
-        confidence_factors["pattern_legitimacy"] = pattern_score * 0.30
+        # Invert: if message looks legitimate (high pattern_score), threat confidence should be LOW
+        confidence_factors["pattern_legitimacy"] = (1.0 - pattern_score) * 0.30
         reasoning.extend(pattern_reasoning)
 
         # Factor 2: User behavior (25% weight)
+        # NOTE: user_score represents how TRUSTWORTHY the user is (0=suspicious, 1=trustworthy)
+        # We need to INVERT it to get threat confidence
         user_score, user_reasoning = self._analyze_user_behavior(
             log.user_id, log.session_id, alert
         )
-        confidence_factors["user_behavior"] = user_score * 0.25
+        # Invert: if user is trustworthy (high user_score), threat confidence should be LOW
+        confidence_factors["user_behavior"] = (1.0 - user_score) * 0.25
         reasoning.extend(user_reasoning)
 
         # Factor 3: Context awareness (25% weight)
+        # NOTE: context_score represents how NATURAL/BENIGN the message looks (0=suspicious, 1=natural)
+        # We need to INVERT it to get threat confidence
         context_score, context_reasoning = self._analyze_context(
             log, alert, user_context
         )
-        confidence_factors["context_awareness"] = context_score * 0.25
+        # Invert: if message looks natural (high context_score), threat confidence should be LOW
+        confidence_factors["context_awareness"] = (1.0 - context_score) * 0.25
         reasoning.extend(context_reasoning)
 
         # Factor 4: Threat confidence indicators (20% weight)
