@@ -9,12 +9,20 @@ A production-ready SOC system that monitors AI agents for security threats in re
 ## Core Features
 
 🤖 **Multi-Agent System** - Three autonomous agents working together
+
 🌐 **Web Interface** - Interactive chatbot with live security monitoring
+
 🚨 **Real-Time Threat Detection** - Identifies 6 types of attacks instantly
+
 ⚡ **Auto Remediation** - Blocks IPs, limits rates, terminates sessions
+
 🧠 **AI Integration** - Uses OpenAI GPT with comprehensive logging
+
+
 🎯 **False Positive Detection** - ML-based confidence scoring
+
 📊 **Live Dashboard** - Real-time alerts, metrics, and system status
+
 🔒 **Enterprise Ready** - Circuit breakers, retry logic, idempotency
 
 ## Quick Start
@@ -34,6 +42,142 @@ http://localhost:5000
 ```
 
 **That's it!** Try clicking "Prompt Injection" to see the system detect and block threats.
+
+---
+
+## 🏢 Enterprise Features
+
+**Production-grade security and operational improvements now available:**
+
+🔐 **PostgreSQL Database** - Persistent storage for playbooks, approvals, and audit logs
+
+👤 **Authentication & RBAC** - Role-based access control with OIDC support
+
+🔏 **Cryptographic Signing** - Tamper-evident audit trail with hash chains
+
+📜 **Policy-as-Code** - OPA-style policy engine with robust IP validation
+
+✅ **Approval Workflow** - Dry-run default with approval gating for destructive actions
+
+### Quick Enterprise Setup
+
+```bash
+# 1. Install PostgreSQL
+sudo apt-get install postgresql  # Ubuntu/Debian
+# or: brew install postgresql     # macOS
+
+# 2. Install enterprise dependencies
+pip install -r requirements_enterprise.txt
+
+# 3. Initialize database
+python setup_database.py setup
+
+# 4. Start using enterprise features!
+```
+
+**📚 Full Documentation:**
+- [Enterprise Features Guide](./ENTERPRISE_FEATURES.md) - Complete documentation
+- [Quick Setup Guide](./ENTERPRISE_SETUP_GUIDE.md) - 5-minute setup
+
+**🎯 Key Benefits:**
+- **Survive Restarts** - All data persisted in PostgreSQL
+- **Forensic Analysis** - Export audit logs with cryptographic proof
+- **Compliance Ready** - Immutable audit trail for SOX/HIPAA/PCI
+- **Production Safe** - Dry-run default prevents accidents
+- **Zero Trust** - Role-based access control on all operations
+
+### Enterprise Approval Workflow
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ 1. ANALYST Creates Playbook                                │
+│    action="block_ip" target="192.168.1.100"                │
+│    ↓ Policy Engine Evaluation                              │
+│    ↓ Cryptographic Signature                               │
+│    Status: DRY_RUN (default) or PENDING                    │
+└──────────────────┬──────────────────────────────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 2. DRY-RUN Execution (Simulation)                          │
+│    ✓ Validate IP: 192.168.1.100                            │
+│    ✓ Check policy: Requires approval (private IP)          │
+│    ✓ Estimate impact: 1 IP affected                        │
+│    ✓ Store results with signature                          │
+└──────────────────┬──────────────────────────────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 3. APPROVER Reviews                                         │
+│    • View dry-run results                                   │
+│    • Check threat evidence                                  │
+│    • Decision: APPROVE / REJECT                             │
+│    • Cryptographic signature of decision                    │
+│    Status: APPROVED                                         │
+└──────────────────┬──────────────────────────────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 4. EXECUTOR Runs Playbook                                   │
+│    • Verify approval signature                              │
+│    • Execute: Block IP 192.168.1.100                        │
+│    • Log all actions with hash chain                        │
+│    Status: COMPLETED                                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Enterprise Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    APPLICATION LAYER                        │
+│         Web Interface / REST API / CLI                      │
+└──────────────────┬──────────────────────────────────────────┘
+                   │
+┌──────────────────▼──────────────────────────────────────────┐
+│              APPROVAL WORKFLOW MANAGER                      │
+│  ┌────────────┬──────────────┬───────────────────────────┐ │
+│  │ Policy     │ Auth & RBAC  │ Crypto Signing            │ │
+│  │ Engine     │ (5 Roles)    │ (HMAC + Hash Chains)      │ │
+│  └────────────┴──────────────┴───────────────────────────┘ │
+└──────────────────┬──────────────────────────────────────────┘
+                   │
+┌──────────────────▼──────────────────────────────────────────┐
+│              POSTGRESQL DATABASE (Persistent)               │
+│  ┌───────────┬────────────┬─────────────┬──────────────┐   │
+│  │ Playbooks │ Approvals  │ Audit Logs  │ Users        │   │
+│  │ (signed)  │ (signed)   │ (chained)   │ (sessions)   │   │
+│  └───────────┴────────────┴─────────────┴──────────────┘   │
+│  • Survives restarts  • Queryable  • Retention policies    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Example Usage:**
+
+```python
+from approval_workflow import ApprovalWorkflowManager
+
+# Analyst creates playbook (dry-run default)
+playbook = workflow.create_playbook(
+    auth_context=analyst,
+    action="block_ip",
+    target="192.168.1.100",
+    justification="Malicious activity detected"
+)
+# → Status: DRY_RUN, cryptographically signed
+
+# Execute dry-run simulation
+dry_run = workflow.execute_dry_run(analyst, playbook.id)
+# → Validates: IP format, policy rules, impact
+
+# Approver reviews and approves
+approval = workflow.approve_playbook(approver, playbook.id)
+# → Status: APPROVED, approval cryptographically signed
+
+# Executor runs playbook
+result = execute_playbook(executor, playbook.id)
+# → Audit log created with hash chain link
+```
 
 ---
 
