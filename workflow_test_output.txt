@@ -1,6 +1,0 @@
-Starting workflow test...
-Creating temp DB: C:\Users\salah\AppData\Local\Temp\tmpa8b11hd7.db
-Memory initialized
-All agents initialized
-
-=== Test 1: Localhost Safety ===

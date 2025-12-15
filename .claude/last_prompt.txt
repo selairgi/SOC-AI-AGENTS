@@ -1,4 +1,0 @@
-in the variation generator, use open ai api key to generate many variations, for each miss of the soc , the variations are generated and stored in the memory, but dont exceed memory , but how we detect the miss ? its with the output of the chatbot , if the flag is reveiled, 
-to test this workflow, create a mini clone of the repo, with low security bounderies to the flag, which means the system prompt must be gentle with securing the flag.
-then test the incremental learning of the soc in the mini clone.
-do not modify the contants of detection in the mini clone, just modify the system prompt to make it gentle to reveil the flag 
