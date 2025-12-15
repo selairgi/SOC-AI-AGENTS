@@ -1,0 +1,188 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: soc-postgres
+    environment:
+      # Note: If you see "database 'soc' does not exist" errors, check your .env file
+      # and ensure POSTGRES_DB is set to 'soc_db' (or update all connection strings)
+      POSTGRES_DB: ${POSTGRES_DB:-soc_db}
+      POSTGRES_USER: ${POSTGRES_USER:-soc}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-soc_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-soc} -d ${POSTGRES_DB:-soc_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - soc-network
+
+  # Redis for rate limiting and caching
+  redis:
+    image: redis:7-alpine
+    container_name: soc-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - soc-network
+
+  # Web Application
+  web:
+    build:
+      context: .
+      dockerfile: ./web/Dockerfile
+    container_name: soc-web
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=False
+      - SECRET_KEY=${SECRET_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-3.5-turbo}
+      - POSTGRES_URL=postgresql://${POSTGRES_USER:-soc}:${POSTGRES_PASSWORD:-soc_password}@postgres:5432/${POSTGRES_DB:-soc_db}
+      - REDIS_URL=redis://redis:6379/0
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5000}
+      - SESSION_COOKIE_SECURE=False
+      - PYTHONPATH=/app
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./web:/app
+      - ./shared:/app/shared
+      - ./security:/app/security
+      - ./core:/app/core
+      - ./ai:/app/ai
+      - ./enterprise:/app/enterprise
+      - web_logs:/app/logs
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
+    networks:
+      - soc-network
+    restart: unless-stopped
+
+  # Core SOC Agents
+  core:
+    build:
+      context: .
+      dockerfile: ./core/Dockerfile
+    container_name: soc-core
+    environment:
+      - POSTGRES_URL=postgresql://${POSTGRES_USER:-soc}:${POSTGRES_PASSWORD:-soc_password}@postgres:5432/${POSTGRES_DB:-soc_db}
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-3.5-turbo}
+      - PYTHONPATH=/app
+    command: sh -c "pip install --no-cache-dir jsonschema>=4.0.0 && python -m core.main"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./core:/app/core
+      - ./shared:/app/shared
+      - ./security:/app/security
+      - ./ai:/app/ai
+      - ./enterprise:/app/enterprise
+      - core_logs:/app/logs
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
+    networks:
+      - soc-network
+    restart: unless-stopped
+
+  # Security Module
+  security:
+    build:
+      context: ./security
+      dockerfile: Dockerfile
+    container_name: soc-security
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    volumes:
+      - ./security:/app
+    networks:
+      - soc-network
+    restart: unless-stopped
+
+  # Enterprise Module
+  enterprise:
+    build:
+      context: ./enterprise
+      dockerfile: Dockerfile
+    container_name: soc-enterprise
+    environment:
+      - POSTGRES_URL=postgresql://${POSTGRES_USER:-soc}:${POSTGRES_PASSWORD:-soc_password}@postgres:5432/${POSTGRES_DB:-soc_db}
+      - SECRET_KEY=${SECRET_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./enterprise:/app
+    networks:
+      - soc-network
+    restart: unless-stopped
+
+  # AI Integration Module
+  ai:
+    build:
+      context: ./ai
+      dockerfile: Dockerfile
+    container_name: soc-ai
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-3.5-turbo}
+    volumes:
+      - ./ai:/app
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
+    networks:
+      - soc-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  web_logs:
+  core_logs:
+
+networks:
+  soc-network:
+    driver: bridge
+    enable_ipv6: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.0.0/16
+          gateway: 172.18.0.1
+        - subnet: 2001:db8:1::/64
+          gateway: 2001:db8:1::1
+    driver_opts:
+      com.docker.network.bridge.name: soc-bridge
+
+

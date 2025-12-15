@@ -1,0 +1,4 @@
+python-dotenv>=1.0.0
+jsonschema>=4.0.0
+
+

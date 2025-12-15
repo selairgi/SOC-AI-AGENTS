@@ -1,0 +1,2185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛡️ Enhanced SOC AI Agents - Real-World Security</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --critical-color: #dc2626;
+            --dark-bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg) 0%, #1e293b 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header Styles */
+        .header {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid var(--border-color);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .logo i {
+            animation: pulse 2s infinite;
+        }
+
+        /* SOC Toggle */
+        .soc-toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+        }
+
+        .soc-toggle-label {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 30px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: var(--success-color);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(30px);
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.1); }
+        }
+
+        .status-indicator.warning {
+            background: var(--warning-color);
+        }
+
+        .status-indicator.danger {
+            background: var(--danger-color);
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 450px;
+            gap: 1.5rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            min-height: calc(100vh - 80px);
+        }
+
+        /* Chat Section */
+        .chat-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .chat-container {
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 2px solid var(--border-color);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chat-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.6rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .message.bot .message-avatar {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 1rem 1.25rem;
+            border-radius: 16px;
+            word-wrap: break-word;
+            line-height: 1.6;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+
+        .message.bot .message-content {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 0.5rem;
+        }
+
+        .security-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .security-badge.alert {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .security-badge.safe {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .chat-input-container {
+            padding: 1.25rem;
+            border-top: 2px solid var(--border-color);
+            background: var(--card-bg);
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-end;
+        }
+
+        .chat-input textarea {
+            flex: 1;
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            resize: none;
+            min-height: 50px;
+            max-height: 150px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .send-btn {
+            padding: 1rem 1.75rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.4);
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px -1px rgba(37, 99, 235, 0.6);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 1rem;
+            color: var(--text-secondary);
+            font-style: italic;
+            font-size: 0.9rem;
+            animation: fadeIn 0.3s;
+        }
+
+        .typing-indicator.show {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Security Dashboard */
+        .security-dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .dashboard-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 2px solid var(--border-color);
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header {
+            padding: 1.25rem;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(37, 99, 235, 0.1);
+        }
+
+        .card-title {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.05rem;
+        }
+
+        .card-content {
+            padding: 1.25rem;
+        }
+
+        /* Test Scenarios */
+        .test-scenarios {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .test-btn {
+            padding: 0.75rem;
+            background: var(--border-color);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .test-btn:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        /* Alerts */
+        .alert-item {
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid;
+            animation: alertSlide 0.3s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes alertSlide {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .alert-item.critical {
+            background: rgba(220, 38, 38, 0.15);
+            border-left-color: var(--critical-color);
+        }
+
+        .alert-item.high {
+            background: rgba(239, 68, 68, 0.15);
+            border-left-color: var(--danger-color);
+        }
+
+        .alert-item.medium {
+            background: rgba(245, 158, 11, 0.15);
+            border-left-color: var(--warning-color);
+        }
+
+        .alert-item.low {
+            background: rgba(16, 185, 129, 0.15);
+            border-left-color: var(--success-color);
+        }
+
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-severity {
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .fp-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .fp-badge.low {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .fp-badge.medium {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .fp-badge.high {
+            background: var(--success-color);
+            color: white;
+        }
+
+        /* Metrics */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .metric-item {
+            text-align: center;
+            padding: 1.25rem;
+            background: var(--dark-bg);
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            transition: all 0.3s;
+        }
+
+        .metric-item:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--success-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1.25rem 1.75rem;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            animation: slideInRight 0.3s ease-out;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .notification.success {
+            background: var(--success-color);
+        }
+
+        .notification.warning {
+            background: var(--warning-color);
+        }
+
+        .notification.danger {
+            background: var(--danger-color);
+        }
+
+        .notification.critical {
+            background: var(--critical-color);
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* No Data State */
+        .no-data {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-secondary);
+        }
+
+        .no-data i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Session Termination & Blocking Overlay */
+        .security-lockout-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.98);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            animation: fadeInOverlay 0.5s ease-out;
+        }
+
+        .security-lockout-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeInOverlay {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .lockout-content {
+            text-align: center;
+            padding: 3rem;
+            background: rgba(220, 38, 38, 0.2);
+            border: 3px solid var(--critical-color);
+            border-radius: 20px;
+            max-width: 600px;
+            animation: zoomIn 0.5s ease-out, pulse 2s infinite;
+        }
+
+        @keyframes zoomIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .lockout-icon {
+            font-size: 6rem;
+            color: var(--critical-color);
+            margin-bottom: 1.5rem;
+            animation: shake 0.5s;
+        }
+
+        .lockout-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--critical-color);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .lockout-message {
+            font-size: 1.2rem;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .lockout-details {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-top: 1.5rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .lockout-detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 0.75rem 0;
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .lockout-countdown {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--critical-color);
+            margin-top: 1.5rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Chat disabled state */
+        .chat-container.disabled {
+            pointer-events: none;
+            opacity: 0.5;
+            position: relative;
+        }
+
+        .chat-container.disabled::after {
+            content: '🔒 SESSION TERMINATED';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--critical-color);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 2rem 3rem;
+            border-radius: 16px;
+            border: 3px solid var(--critical-color);
+            z-index: 10;
+            animation: pulse 2s infinite;
+        }
+
+        /* Flash warning animation */
+        @keyframes flashWarning {
+            0%, 100% { background: transparent; }
+            10%, 30%, 50%, 70%, 90% { background: rgba(220, 38, 38, 0.3); }
+        }
+
+        .warning-flash {
+            animation: flashWarning 1s ease-out;
+        }
+
+        /* Glitch effect for blocked state */
+        @keyframes glitch {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+        }
+
+        .glitch-effect {
+            animation: glitch 0.3s;
+        }
+
+        /* Workflow Logs Styles */
+        .workflow-logs-container {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+
+        .workflow-log-entry {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(30, 64, 175, 0.05) 100%);
+            border-left: 3px solid var(--primary-color);
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 6px;
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        .workflow-log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .workflow-log-agent {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .workflow-log-timestamp {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .workflow-log-action {
+            color: var(--text-primary);
+            margin-bottom: 0.3rem;
+        }
+
+        .workflow-log-details {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .workflow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0.3rem 0;
+            color: var(--success-color);
+        }
+
+        /* Remediation Panel Styles */
+        .remediation-request {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);
+            border-left: 4px solid var(--danger-color);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        .remediation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .remediation-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--danger-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .remediation-severity {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .remediation-severity.critical {
+            background: var(--critical-color);
+            color: white;
+        }
+
+        .remediation-severity.high {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .remediation-plan {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin: 0.75rem 0;
+        }
+
+        .remediation-plan-title {
+            font-weight: 600;
+            color: var(--warning-color);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .remediation-action {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+
+        .remediation-action i {
+            color: var(--warning-color);
+        }
+
+        .remediation-buttons {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .remediation-btn {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .remediation-btn.approve {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .remediation-btn.approve:hover {
+            background: var(--critical-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+        }
+
+        .remediation-btn.reject {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+        }
+
+        .remediation-btn.reject:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--text-secondary);
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-shield-halved"></i>
+                Enhanced SOC AI Agents
+            </div>
+
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <div class="soc-toggle-container">
+                    <span class="soc-toggle-label">SOC Monitoring:</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="soc-toggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span id="soc-status-text" style="font-weight: 600; color: var(--success-color);">ACTIVE</span>
+                </div>
+
+                <div class="soc-toggle-container">
+                    <span class="soc-toggle-label">Agent Logs:</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="workflow-logs-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span id="workflow-status-text" style="font-weight: 600; color: var(--text-secondary);">OFF</span>
+                </div>
+
+                <div class="soc-toggle-container">
+                    <span class="soc-toggle-label">Auto-Remediation:</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="auto-remediation-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span id="auto-remediation-text" style="font-weight: 600; color: var(--warning-color);">MANUAL</span>
+                </div>
+            </div>
+
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="status-indicator" id="soc-indicator"></div>
+                    <span>Alerts: <span id="alert-count">0</span></span>
+                </div>
+                <div class="status-item">
+                    <div class="status-indicator"></div>
+                    <span>Session: <span id="session-id">{{ session_id[:8] }}</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="chat-section">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <div class="chat-title">
+                        <i class="fas fa-comments"></i>
+                        AI Chat with Real-Time SOC Protection
+                    </div>
+                    <div class="chat-controls">
+                        <button class="btn btn-primary" onclick="clearChat()" title="Clear Chat">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="chat-messages" id="chat-messages">
+                    <div class="message bot animate__animated animate__fadeIn">
+                        <div class="message-avatar">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="message-content">
+                            <div>🛡️ Hello! I'm an AI assistant with real SOC protection. I use OpenAI's API with comprehensive security monitoring. Try sending various messages - including attack attempts - to see the SOC system in action!</div>
+                            <div class="message-time" id="welcome-time"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="typing-indicator" id="typing-indicator">
+                    <div class="spinner"></div>
+                    AI is processing your message...
+                </div>
+                <div class="chat-input-container">
+                    <div class="chat-input">
+                        <textarea id="message-input" placeholder="Type your message... (Press Enter to send)" rows="1"></textarea>
+                        <button class="send-btn" id="send-btn" onclick="sendMessage()">
+                            <i class="fas fa-paper-plane"></i>
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="security-dashboard">
+
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Live Security Alerts
+                    </div>
+                    <button class="btn btn-primary" onclick="refreshAlerts()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <div class="card-content" id="security-alerts">
+                    <div class="no-data">
+                        <i class="fas fa-shield-check"></i>
+                        <div>No security alerts detected</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-chart-bar"></i>
+                        Security Metrics
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <div class="metric-value" id="total-alerts">0</div>
+                            <div class="metric-label">Total Alerts</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" id="fp-detected">0</div>
+                            <div class="metric-label">False Positives</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" id="actions-taken">0</div>
+                            <div class="metric-label">Actions Taken</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" id="blocked-entities">0</div>
+                            <div class="metric-label">Blocked</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agent Workflow Logs Panel -->
+            <div class="dashboard-card" id="workflow-logs-panel" style="display: none;">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-network-wired"></i>
+                        Agent Workflow Logs
+                    </div>
+                    <button class="btn btn-primary" onclick="clearWorkflowLogs()">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                </div>
+                <div class="card-content" style="max-height: 400px; overflow-y: auto;">
+                    <div id="workflow-logs" class="workflow-logs-container">
+                        <div class="no-data">
+                            <i class="fas fa-robot"></i>
+                            <div>No agent activity yet. Send a message to see the workflow.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Remediation Approval Panel -->
+            <div class="dashboard-card" id="remediation-panel" style="display: none;">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-shield-virus"></i>
+                        Pending Remediations
+                    </div>
+                    <button class="btn btn-primary" onclick="clearRemediations()">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                </div>
+                <div class="card-content">
+                    <div id="pending-remediations">
+                        <div class="no-data">
+                            <i class="fas fa-check-circle"></i>
+                            <div>No pending remediations</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Lockout Overlay -->
+    <div class="security-lockout-overlay" id="lockout-overlay">
+        <div class="lockout-content">
+            <div class="lockout-icon">
+                <i class="fas fa-ban"></i>
+            </div>
+            <div class="lockout-title" id="lockout-title">ACCESS DENIED</div>
+            <div class="lockout-message" id="lockout-message">
+                Your session has been terminated due to security policy violations.
+            </div>
+            <div class="lockout-details" id="lockout-details">
+                <div class="lockout-detail-item">
+                    <span>Session ID:</span>
+                    <span id="lockout-session">{{ session_id[:12] }}</span>
+                </div>
+                <div class="lockout-detail-item">
+                    <span>Reason:</span>
+                    <span id="lockout-reason">Security violation detected</span>
+                </div>
+                <div class="lockout-detail-item">
+                    <span>Timestamp:</span>
+                    <span id="lockout-timestamp">-</span>
+                </div>
+                <div class="lockout-detail-item">
+                    <span>Status:</span>
+                    <span id="lockout-status" style="color: var(--critical-color); font-weight: bold;">BLOCKED</span>
+                </div>
+            </div>
+            <div class="lockout-countdown" id="lockout-countdown"></div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const sessionId = '{{ session_id }}';
+        let socEnabled = true;
+        let workflowLogsEnabled = false;
+        let autoRemediationEnabled = false;
+        let alertCount = 0;
+        let fpDetected = 0;
+        let actionsTaken = 0;
+        let blockedEntities = 0;
+        let csrfToken = null;
+        let pendingRemediations = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('welcome-time').textContent = new Date().toLocaleTimeString();
+            // Fetch CSRF token
+            fetch('/api/csrf-token')
+                .then(response => response.json())
+                .then(data => {
+                    csrfToken = data.csrf_token;
+                    console.log('CSRF token loaded');
+                })
+                .catch(error => {
+                    console.error('Failed to load CSRF token:', error);
+                    showNotification('Warning: CSRF protection may not work correctly', 'warning');
+                });
+            loadInitialData();
+        });
+
+        // SOC Toggle
+        document.getElementById('soc-toggle').addEventListener('change', function() {
+            socEnabled = this.checked;
+            toggleSOC(socEnabled);
+        });
+
+        // Workflow Logs Toggle
+        document.getElementById('workflow-logs-toggle').addEventListener('change', function() {
+            workflowLogsEnabled = this.checked;
+            const statusText = document.getElementById('workflow-status-text');
+            const panel = document.getElementById('workflow-logs-panel');
+
+            if (workflowLogsEnabled) {
+                statusText.textContent = 'ON';
+                statusText.style.color = 'var(--success-color)';
+                panel.style.display = 'block';
+                addWorkflowLog('System', 'Workflow logging enabled', 'info');
+            } else {
+                statusText.textContent = 'OFF';
+                statusText.style.color = 'var(--text-secondary)';
+                panel.style.display = 'none';
+            }
+        });
+
+        // Auto-Remediation Toggle
+        document.getElementById('auto-remediation-toggle').addEventListener('change', function() {
+            autoRemediationEnabled = this.checked;
+            const statusText = document.getElementById('auto-remediation-text');
+            const remediationPanel = document.getElementById('remediation-panel');
+
+            if (autoRemediationEnabled) {
+                statusText.textContent = 'AUTO';
+                statusText.style.color = 'var(--success-color)';
+                addWorkflowLog('System', 'Auto-remediation enabled - threats will be automatically blocked', 'warning');
+                // In auto mode, we don't need the remediation panel visible by default
+                // It will still be there but hidden unless there are pending items
+            } else {
+                statusText.textContent = 'MANUAL';
+                statusText.style.color = 'var(--warning-color)';
+                addWorkflowLog('System', 'Manual remediation mode - user approval required', 'info');
+                // In manual mode, show the remediation panel so users know it exists
+                remediationPanel.style.display = 'block';
+            }
+        });
+
+        function toggleSOC(enabled) {
+            if (!csrfToken) {
+                showNotification('CSRF token not loaded. Please refresh the page.', 'danger');
+                return;
+            }
+            
+            fetch('/api/soc/toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({enabled: enabled, csrf_token: csrfToken})
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.json();
+            })
+            .then(data => {
+                const statusText = document.getElementById('soc-status-text');
+                if (data.soc_enabled) {
+                    statusText.textContent = 'ACTIVE';
+                    statusText.style.color = 'var(--success-color)';
+                    showNotification('SOC Monitoring Enabled', 'success');
+                } else {
+                    statusText.textContent = 'DISABLED';
+                    statusText.style.color = 'var(--danger-color)';
+                    showNotification('SOC Monitoring Disabled', 'warning');
+                }
+            })
+            .catch(error => {
+                console.error('Toggle SOC error:', error);
+                showNotification('Error: ' + (error.error || error.message || 'Failed to toggle SOC'), 'danger');
+            });
+        }
+
+        // Socket connection
+        socket.emit('join_session', {session_id: sessionId});
+
+        socket.on('connect', function() {
+            showNotification('Connected to SOC system', 'success');
+        });
+
+        // Listen for workflow log events from backend
+        socket.on('workflow_log', function(data) {
+            console.log('📋 Workflow Log Received:', data);
+            addWorkflowLog(data.agent, data.action, data.type, data.details);
+        });
+
+        socket.on('security_alert', function(data) {
+            console.log('🚨 Security Alert Received:', data);
+
+            // Add to alerts panel
+            addSecurityAlert(data);
+            updateMetrics();
+            showNotification(`🚨 ${data.severity.toUpperCase()}: ${data.title}`, data.severity);
+
+            // Handle remediation based on mode
+            if (autoRemediationEnabled) {
+                // In auto mode, show what actions were taken
+                if (data.remediation_actions && data.remediation_actions.length > 0) {
+                    data.remediation_actions.forEach(action => {
+                        addWorkflowLog('Remediator', `AUTO MODE: Executed ${action.type}`, 'danger',
+                            `${action.description || 'Action executed'} | Target: ${action.target || 'N/A'}`);
+                    });
+                } else {
+                    addWorkflowLog('Remediator', 'AUTO MODE: Executing remediation immediately', 'danger',
+                        `Actions: Block IP ${data.src_ip}, Suspend session, Alert security team`);
+                }
+                showNotification('Auto-remediation executed', 'success');
+            } else {
+                // In manual mode, request approval
+                addWorkflowLog('SOC Analyst', 'MANUAL MODE: Requesting user approval for remediation', 'warning');
+                addRemediationRequest(data);
+            }
+        });
+
+        // Handle session termination
+        socket.on('session_terminated', function(data) {
+            console.log('🔒 SESSION TERMINATED:', data);
+            triggerSessionTermination(data);
+        });
+
+        // Handle IP blocking
+        socket.on('ip_blocked', function(data) {
+            console.log('🚫 IP BLOCKED:', data);
+            triggerIPBlock(data);
+        });
+
+        // Handle user suspension
+        socket.on('user_suspended', function(data) {
+            console.log('⛔ USER SUSPENDED:', data);
+            triggerUserSuspension(data);
+        });
+
+        // Chat functionality
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            if (!csrfToken) {
+                showNotification('CSRF token not loaded. Please refresh the page.', 'danger');
+                return;
+            }
+
+            addMessage(message, 'user');
+            input.value = '';
+            showTypingIndicator();
+
+            // Add workflow log
+            addWorkflowLog('User', `Message sent: "${message.substring(0, 50)}${message.length > 50 ? '...' : ''}"`, 'info');
+            addWorkflowLog('SOC Builder', 'Analyzing message for threats...', 'info');
+
+            fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    message: message,
+                    csrf_token: csrfToken,
+                    auto_remediation: autoRemediationEnabled
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.json();
+            })
+            .then(data => {
+                hideTypingIndicator();
+
+                // Check for errors in response
+                if (data.error) {
+                    showNotification('Error: ' + data.error, 'danger');
+                    addMessage('I apologize, but I encountered an error processing your request.', 'bot');
+                    return;
+                }
+
+                // Check if response is empty
+                if (!data.response || data.response.trim() === '') {
+                    console.warn('Empty response received:', data);
+                    addMessage('I apologize, but I couldn\'t generate a response. Please try again.', 'bot', data.security_check);
+                    return;
+                }
+
+                // Log full response to console for debugging
+                console.log('🛡️ SOC Response:', data);
+
+                // Add workflow logs
+                if (data.security_check && data.security_check.threat_detected) {
+                    addWorkflowLog('SOC Builder', 'Threat detected!', 'danger',
+                        `Type: ${data.security_check.threat_type || 'Unknown'}`);
+
+                    if (data.security_check.detection_method) {
+                        const method = data.security_check.detection_method;
+                        if (method.includes('semantic')) {
+                            addWorkflowLog('Semantic Detector', 'Pattern match found via ML similarity', 'warning');
+                        } else if (method.includes('intelligent')) {
+                            addWorkflowLog('Intelligent Detector', 'Threat identified via pattern analysis', 'warning');
+                        }
+                    }
+                } else {
+                    addWorkflowLog('SOC Builder', 'No threats detected - message is safe', 'success');
+                }
+
+                // Add AI response log
+                addWorkflowLog('AI Assistant', 'Response generated and sent to user', 'success')
+
+                // Log remediation actions clearly
+                if (data.security_check && data.security_check.remediation_taken) {
+                    console.log('🚨 REMEDIATION ACTIONS TAKEN:');
+                    if (data.security_check.remediation_actions && Array.isArray(data.security_check.remediation_actions)) {
+                        data.security_check.remediation_actions.forEach(action => {
+                            console.log(`  ${action.type}: ${action.description}`);
+                            console.log(`    Target: ${action.target}`);
+                        });
+                    }
+                }
+
+                // Log blocking status
+                if (data.security_check && data.security_check.blocked) {
+                    console.log('🚫 ACCESS BLOCKED:', data.security_check.block_reason);
+                }
+
+                addMessage(data.response, 'bot', data.security_check);
+
+                if (data.security_check && data.security_check.blocked) {
+                    showNotification('⛔ ' + (data.security_check.block_reason || 'Access blocked'), 'critical');
+                }
+            })
+            .catch(error => {
+                hideTypingIndicator();
+                console.error('Chat error:', error);
+                const errorMessage = error.error || error.message || 'Failed to send message';
+                showNotification('Error: ' + errorMessage, 'danger');
+                addMessage('I apologize, but I encountered an error. Please try again.', 'bot');
+            });
+        }
+
+        function addMessage(message, sender, securityInfo = null) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender} animate__animated animate__fadeIn`;
+
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.innerHTML = sender === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
+
+            const content = document.createElement('div');
+            content.className = 'message-content';
+
+            const messageText = document.createElement('div');
+            messageText.textContent = message;
+
+            const messageTime = document.createElement('div');
+            messageTime.className = 'message-time';
+            messageTime.textContent = new Date().toLocaleTimeString();
+
+            content.appendChild(messageText);
+            content.appendChild(messageTime);
+
+            if (securityInfo && securityInfo.alert_detected) {
+                const badge = document.createElement('div');
+                badge.className = 'security-badge alert';
+                badge.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Security Alert Detected`;
+                content.appendChild(badge);
+
+                // Show remediation actions if any were taken
+                if (securityInfo.remediation_taken && securityInfo.remediation_actions && securityInfo.remediation_actions.length > 0) {
+                    const remediationDiv = document.createElement('div');
+                    remediationDiv.style.marginTop = '0.5rem';
+                    remediationDiv.style.padding = '0.75rem';
+                    remediationDiv.style.background = 'rgba(239, 68, 68, 0.1)';
+                    remediationDiv.style.borderRadius = '6px';
+                    remediationDiv.style.fontSize = '0.85rem';
+                    remediationDiv.id = `remediation-${Date.now()}`;
+
+                    let actionsHtml = '<div style="color: var(--danger-color); font-weight: 600; margin-bottom: 0.5rem;"><i class="fas fa-shield-alt"></i> Remediation Actions:</div>';
+
+                    // Show ALL remediation actions, not just block_ip
+                    securityInfo.remediation_actions.forEach((action, index) => {
+                        // Choose icon based on action type
+                        const icons = {
+                            'block_ip': '🚫',
+                            'rate_limit': '⏱️',
+                            'terminate_session': '🔒',
+                            'suspend_user': '⛔',
+                            'monitor': '👁️'
+                        };
+                        const icon = icons[action.type] || '⚙️';
+
+                        // Only show buttons if NOT in auto-remediation mode
+                        const showButtons = !autoRemediationEnabled;
+
+                        actionsHtml += `<div style="margin-left: 0.5rem; margin-top: 0.5rem; padding: 0.5rem; background: rgba(0, 0, 0, 0.2); border-radius: 4px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div>${icon} <strong>${action.type}</strong>: ${action.description || action.type.replace(/_/g, ' ')}</div>
+                                    ${action.target ? `<div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">Target: ${action.target}</div>` : ''}
+                                </div>
+                                ${showButtons ? `
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button onclick="confirmRemediation('${action.type}', '${action.target || ''}', ${index})"
+                                            style="padding: 0.25rem 0.75rem; background: var(--success-color); border: none; border-radius: 4px; color: white; cursor: pointer; font-size: 0.75rem; font-weight: 600;">
+                                        <i class="fas fa-check"></i> Confirm
+                                    </button>
+                                    <button onclick="suggestRemediation('${action.type}', '${action.target || ''}', ${index})"
+                                            style="padding: 0.25rem 0.75rem; background: var(--primary-color); border: none; border-radius: 4px; color: white; cursor: pointer; font-size: 0.75rem; font-weight: 600;">
+                                        <i class="fas fa-lightbulb"></i> Suggest
+                                    </button>
+                                </div>
+                                ` : `
+                                <div style="padding: 0.25rem 0.75rem; background: var(--success-color); border-radius: 4px; color: white; font-size: 0.75rem; font-weight: 600;">
+                                    <i class="fas fa-check-circle"></i> Auto-Executed
+                                </div>
+                                `}
+                            </div>
+                        </div>`;
+                    });
+                    remediationDiv.innerHTML = actionsHtml;
+                    content.appendChild(remediationDiv);
+                }
+
+                // Show blocked warning
+                if (securityInfo.blocked) {
+                    const blockWarning = document.createElement('div');
+                    blockWarning.style.marginTop = '0.5rem';
+                    blockWarning.style.padding = '0.75rem';
+                    blockWarning.style.background = 'var(--critical-color)';
+                    blockWarning.style.borderRadius = '4px';
+                    blockWarning.style.fontSize = '0.9rem';
+                    blockWarning.style.fontWeight = '600';
+                    blockWarning.innerHTML = `<i class="fas fa-ban"></i> ${securityInfo.block_reason || 'Access blocked'}`;
+                    content.appendChild(blockWarning);
+                }
+            } else if (securityInfo && !securityInfo.alert_detected) {
+                const badge = document.createElement('div');
+                badge.className = 'security-badge safe';
+                badge.innerHTML = `<i class="fas fa-check-circle"></i> No Threats Detected`;
+                content.appendChild(badge);
+            }
+
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(content);
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function addSecurityAlert(alert) {
+            const container = document.getElementById('security-alerts');
+            const noData = container.querySelector('.no-data');
+            if (noData) noData.remove();
+
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert-item ${alert.severity.toLowerCase()} animate__animated animate__fadeInLeft`;
+
+            const fpProb = alert.false_positive_probability || 0;
+            const fpLevel = fpProb > 0.7 ? 'high' : fpProb > 0.3 ? 'medium' : 'low';
+
+            let remediationHtml = '';
+            if (alert.remediation_taken) {
+                remediationHtml = '<div style="margin-top: 0.5rem; padding: 0.5rem; background: rgba(245, 158, 11, 0.1); border-radius: 4px;">';
+                remediationHtml += '<div style="font-size: 0.8rem; color: var(--warning-color); font-weight: 600; margin-bottom: 0.25rem;"><i class="fas fa-shield-alt"></i> Remediation Actions:</div>';
+
+                // Show remediation actions if available
+                if (alert.remediation_actions && alert.remediation_actions.length > 0) {
+                    alert.remediation_actions.forEach(action => {
+                        const icons = {
+                            'block_ip': '🚫',
+                            'rate_limit': '⏱️',
+                            'terminate_session': '🔒',
+                            'suspend_user': '⛔',
+                            'monitor': '👁️'
+                        };
+                        const icon = icons[action.type] || '⚙️';
+                        remediationHtml += `<div style="font-size: 0.75rem; margin-left: 1rem; margin-top: 0.25rem; color: var(--text-primary);">${icon} <strong>${action.type}</strong>: ${action.description || action.type.replace(/_/g, ' ')}</div>`;
+                    });
+                } else {
+                    remediationHtml += '<div style="font-size: 0.75rem; margin-left: 1rem; color: var(--text-secondary);">Remediation executed</div>';
+                }
+                remediationHtml += '</div>';
+            }
+
+            alertDiv.innerHTML = `
+                <div class="alert-header">
+                    <div class="alert-severity">${alert.severity} - ${alert.threat_type}</div>
+                    <div class="fp-badge ${fpLevel}">FP: ${(fpProb * 100).toFixed(0)}%</div>
+                </div>
+                <div style="font-weight: 600; margin-bottom: 0.5rem;">${alert.title}</div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary);">${alert.description}</div>
+                ${remediationHtml}
+            `;
+
+            container.insertBefore(alertDiv, container.firstChild);
+
+            if (container.children.length > 5) {
+                container.lastChild.remove();
+            }
+
+            alertCount++;
+            if (fpProb > 0.7) fpDetected++;
+            if (alert.remediation_taken === true) actionsTaken++;
+
+            updateMetrics();
+        }
+
+        function updateMetrics() {
+            document.getElementById('total-alerts').textContent = alertCount;
+            document.getElementById('fp-detected').textContent = fpDetected;
+            document.getElementById('actions-taken').textContent = actionsTaken;
+            document.getElementById('alert-count').textContent = alertCount;
+
+            const indicator = document.getElementById('soc-indicator');
+            indicator.className = 'status-indicator ' + (alertCount > 5 ? 'danger' : alertCount > 0 ? 'warning' : '');
+        }
+
+        function confirmRemediation(actionType, target, index) {
+            console.log('Remediation confirmed:', { actionType, target, index });
+
+            // Send approval to backend to execute remediation
+            fetch('/api/execute-remediation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    action_type: actionType,
+                    target: target,
+                    session_id: sessionId,
+                    csrf_token: csrfToken
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`✅ ${data.message}`, 'success');
+                    addWorkflowLog('User', `Approved and executed: ${actionType}`, 'success',
+                        `Target: ${target}`);
+
+                    // Remove the remediation item from pending list
+                    const remediationItems = document.querySelectorAll('#pending-remediations > div');
+                    if (remediationItems[index]) {
+                        remediationItems[index].remove();
+                    }
+                    checkIfRemediationsEmpty();
+                } else {
+                    showNotification(`❌ Failed to execute: ${data.error || 'Unknown error'}`, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error executing remediation:', error);
+                showNotification('❌ Error executing remediation action', 'danger');
+            });
+        }
+
+        function suggestRemediation(actionType, target, index) {
+            const suggestions = {
+                'block_ip': 'Consider blocking this IP address for 1 hour. Monitor for additional suspicious activity.',
+                'rate_limit': 'Apply rate limiting: 5 requests per 2 minutes. This will slow down potential attacks.',
+                'terminate_session': 'Terminate this session immediately. User will need to reconnect.',
+                'suspend_user': 'Suspend user account temporarily. Review account activity before reactivation.',
+                'monitor': 'Continue monitoring this user/IP. Log all activities for security review.'
+            };
+            
+            const suggestion = suggestions[actionType] || 'Review this action with the security team.';
+            showNotification(`Suggestion: ${suggestion}`, 'info');
+            console.log('Remediation suggestion:', { actionType, target, suggestion });
+        }
+
+        function showTypingIndicator() {
+            document.getElementById('typing-indicator').classList.add('show');
+            document.getElementById('send-btn').disabled = true;
+        }
+
+        function hideTypingIndicator() {
+            document.getElementById('typing-indicator').classList.remove('show');
+            document.getElementById('send-btn').disabled = false;
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type} animate__animated animate__fadeInRight`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.classList.add('animate__fadeOutRight');
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
+        }
+
+        function clearChat() {
+            const messagesContainer = document.getElementById('chat-messages');
+            messagesContainer.innerHTML = `
+                <div class="message bot animate__animated animate__fadeIn">
+                    <div class="message-avatar"><i class="fas fa-robot"></i></div>
+                    <div class="message-content">
+                        <div>Chat cleared. Ready for new conversation!</div>
+                        <div class="message-time">${new Date().toLocaleTimeString()}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function refreshAlerts() {
+            loadInitialData();
+            showNotification('Alerts refreshed', 'success');
+        }
+
+        function loadInitialData() {
+            fetch('/api/soc/status')
+                .then(response => response.json())
+                .then(data => {
+                    alertCount = data.total_alerts || 0;
+                    actionsTaken = data.remediation_stats?.total_actions || 0;
+                    fpDetected = data.fp_detector_stats?.false_positives_detected || 0;
+                    blockedEntities = data.remediation_stats?.currently_blocked_ips || 0;
+                    updateMetrics();
+                });
+        }
+
+        // Enter key to send
+        document.getElementById('message-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Blocking and Termination Functions
+        function triggerSessionTermination(data) {
+            // Flash warning
+            document.body.classList.add('warning-flash');
+            setTimeout(() => document.body.classList.remove('warning-flash'), 1000);
+
+            // Disable chat
+            const chatContainer = document.querySelector('.chat-container');
+            chatContainer.classList.add('disabled', 'glitch-effect');
+
+            // Show lockout overlay
+            setTimeout(() => {
+                showLockoutOverlay({
+                    title: '🔒 SESSION TERMINATED',
+                    message: data.reason || 'Your session has been terminated due to security policy violations.',
+                    reason: data.reason || 'Security violation detected',
+                    type: 'session_terminated'
+                });
+            }, 1000);
+
+            // Play alert sound (optional)
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYHGmi78OWhUBELTqXh8bllHwU7kdfy0IMwByd9zPLZiTcHGWe/8+Wtbh8FMaXX8tCDMwglftDy2Yo2Bxppu+/ln1gRA0ij4fG4ZSEFOpHY8tOEMgchfM/y2Yo1Bxlrv/Ppq2kfBjal2PLQgjIIJH3N8tuLNgcZaLrw5qRUEg1Po+HxuWYgBTuQ2PLThDQGH3vO8dqLNwcZaLzt45xXEw5Nntz0u2ofBjGe2PLRgzIHI3vN8tqKNQcZaLvv55lSEQ1Po+HxtGUgBTuQ2PLUhDMGIHvN8dmKNgcbabzs44tGDAATcrzz1YkxBxhtvfXlr28fBjal2fLSgzIGI3zM8tmKNQcZaLvv5aVaEgxOouDws2UfBTuR2PLUhDMGIHvN8tmLNgYbabrs48lLDAEQcL3z1YkxBxhtvfXlr28fBjal2fLSgzIGI3zM8tmKNQcZaLvv5aVaEgxOouDws2UfBTuR2PLUhDMGIHvN8tmLNgYbabrs48lLDAEQcL3z1YkxBxhtvfXlr28fBjal2fLSgzIGI3zM8tmKNQcZaLvv5aVaEgxOouDws2UfBTuR2PLUhDMGIHvN8tmLNgYbabrs48lLDAEQcL3z1YkxBxhtvfXlr28fBjal2fLSgzIGI3zM8tmKNQcZaLvv5aVaEgxOouDws2UfBTuR2PLUhDMGIHvN8tmLNgYbabrs48lLDAEQcL3z1YkxBxhtvfXlr28fBjal2fLSgzIGI3zM8tmKNQcZaLvv5aVaEgxOouDws2UfBTuR2PLUhDMGIHvN8tmLNgYbabrs48lLDAEQcL3z1YkxBxhtvfXlr28fBjal2fLSgzIGI3zM8tmKNQcZaLvv5aVaEgxOouDws2UfBTuR2PLUhDMGIHvN8tmLNgYbabrs48lLDAEQcL3z1YkxBxhtvfXlr28fBjal2fLSgzIGI3zM8tmKNQcZaLvv5aVaEgxOouDws2UfBTuR2PLUhDMGIHvN8tmLNgYbabrs48lLDAEQcL3z1YkxBxhtvfXlr28fBjal2fLSgzIGI3zM8tmKNQcZaLvv5aVaEgxOouDws2UfBTuR2PLUhDMGIHvN8tmLNgYbabrs48lLDAEQcL3z1YkxBxhtvfXlr28fBjal2fLSgzIGI3zM8tmKNQcZaLvv5aVaEgxOouDws2UfBTuR2PLUhDMGIHvN8tmLNgYbabrs48lLDAEQcL3z1YkxBxhtvfXlr28fBjal2fLSgzIGI3zM8tmKNQcZaLvv5aVaEgxOouDws2UfBTuR2PLUhDMGIHvN8tmLNgYbabrs48lLDAEQcL3z1YkxBxhtvfXlr28fBjal2fLSgzIGI3zM8tmKNQcZaLvv5aVaEgxOouDws2UfBTuR2PLUhDMGIHvN8tmLNgYbabrs48lLDAEQcL3z1YkxBxhtvfXlr28fBjal2fLSgzIGI3zM8tmKNQcZaLvv5aVaEgxOouDws2UfBTuR2PLUhDMGIHvN8tmLNgYbabrs48lLDAEQcL3z1YkxBxhtvfXlr28fBjal2fLSgzIGI3zM8tmKNQcZaLvv5aVaEgxOouDws2UfBTuR2PLUhDMGIHvN8tmLNgYbabrs48lLDAEQcL3z1YkxBxhtvfXlr28fBjal2fLSgzIGI3zM8tmKNQcZaLvv5aVaEgxOouDws2UfBTuR2PLUhDMGIHvN8tmLNgYbabrs48lLDAEQcL3z1YkxBxhtvfXlr28fBjal2fLSgzIGI3zM8tmKNQcZaLvv5aVaEgxOouDws2UfBTuR2PLUhDMGIHvN8tmLNgYbabrs48lLDAEQcL3z1YkxBxhtvfXlr28fBjal2fLSgzIGI3zM8tmKNQcZaLvv5aVaEgxOouDws2UfBTuR2PLUhDMGIHvN8tmLNgYbabrs48lLDAEQcL3z1YkxBxhtvfXlr28fBjal2fLSgzIGI3zM8tmKNQcZaLvv5aVaEgxOouDws2UfBTuR2PLUhDMGIHvN8tmLNg==');
+                audio.play().catch(e => console.log('Audio play failed:', e));
+            } catch(e) {
+                console.log('Audio not available:', e);
+            }
+        }
+
+        function triggerIPBlock(data) {
+            // Flash warning
+            document.body.classList.add('warning-flash');
+            setTimeout(() => document.body.classList.remove('warning-flash'), 1000);
+
+            // Disable everything
+            const chatContainer = document.querySelector('.chat-container');
+            chatContainer.classList.add('disabled', 'glitch-effect');
+
+            // Show lockout overlay with IP info
+            setTimeout(() => {
+                showLockoutOverlay({
+                    title: '🚫 IP ADDRESS BLOCKED',
+                    message: `Your IP address has been blocked due to ${data.reason || 'multiple security violations'}.`,
+                    reason: data.reason || 'Multiple security policy violations',
+                    type: 'ip_blocked',
+                    duration: data.duration || 3600,
+                    ip: data.ip
+                });
+            }, 1000);
+        }
+
+        function triggerUserSuspension(data) {
+            // Flash warning
+            document.body.classList.add('warning-flash');
+            setTimeout(() => document.body.classList.remove('warning-flash'), 1000);
+
+            // Disable chat
+            const chatContainer = document.querySelector('.chat-container');
+            chatContainer.classList.add('disabled', 'glitch-effect');
+
+            // Show lockout overlay
+            setTimeout(() => {
+                showLockoutOverlay({
+                    title: '⛔ ACCOUNT SUSPENDED',
+                    message: data.reason || 'Your account has been suspended due to security policy violations.',
+                    reason: data.reason || 'Security policy violations',
+                    type: 'user_suspended'
+                });
+            }, 1000);
+        }
+
+        function showLockoutOverlay(config) {
+            const overlay = document.getElementById('lockout-overlay');
+            const title = document.getElementById('lockout-title');
+            const message = document.getElementById('lockout-message');
+            const reason = document.getElementById('lockout-reason');
+            const timestamp = document.getElementById('lockout-timestamp');
+            const countdown = document.getElementById('lockout-countdown');
+
+            // Update content
+            title.textContent = config.title;
+            message.textContent = config.message;
+            reason.textContent = config.reason;
+            timestamp.textContent = new Date().toLocaleString();
+
+            // Add IP info if available
+            if (config.ip) {
+                const ipItem = document.createElement('div');
+                ipItem.className = 'lockout-detail-item';
+                ipItem.innerHTML = `<span>Blocked IP:</span><span style="color: var(--critical-color); font-weight: bold;">${config.ip}</span>`;
+                document.getElementById('lockout-details').appendChild(ipItem);
+            }
+
+            // Show countdown if duration is provided
+            if (config.duration) {
+                let remaining = config.duration;
+                countdown.textContent = formatDuration(remaining);
+
+                const countdownInterval = setInterval(() => {
+                    remaining--;
+                    if (remaining <= 0) {
+                        clearInterval(countdownInterval);
+                        countdown.textContent = '⏱️ EXPIRED';
+                    } else {
+                        countdown.textContent = formatDuration(remaining);
+                    }
+                }, 1000);
+            }
+
+            // Show overlay
+            overlay.classList.add('active');
+        }
+
+        function formatDuration(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+
+            if (hours > 0) {
+                return `⏱️ ${hours}h ${minutes}m ${secs}s`;
+            } else if (minutes > 0) {
+                return `⏱️ ${minutes}m ${secs}s`;
+            } else {
+                return `⏱️ ${secs}s`;
+            }
+        }
+
+        // Workflow Logs Functions
+        function addWorkflowLog(agent, action, type = 'info', details = null) {
+            if (!workflowLogsEnabled) return;
+
+            const container = document.getElementById('workflow-logs');
+
+            // Remove "no data" message
+            const noData = container.querySelector('.no-data');
+            if (noData) noData.remove();
+
+            const logEntry = document.createElement('div');
+            logEntry.className = 'workflow-log-entry';
+
+            const icons = {
+                'SOC Builder': 'fa-shield-halved',
+                'Semantic Detector': 'fa-brain',
+                'Intelligent Detector': 'fa-robot',
+                'SOC Analyst': 'fa-user-shield',
+                'Remediator': 'fa-hammer',
+                'System': 'fa-server'
+            };
+
+            const colors = {
+                'info': 'var(--primary-color)',
+                'success': 'var(--success-color)',
+                'warning': 'var(--warning-color)',
+                'danger': 'var(--danger-color)'
+            };
+
+            logEntry.innerHTML = `
+                <div class="workflow-log-header">
+                    <div class="workflow-log-agent">
+                        <i class="fas ${icons[agent] || 'fa-cog'}"></i>
+                        <span>${agent}</span>
+                    </div>
+                    <div class="workflow-log-timestamp">${new Date().toLocaleTimeString()}</div>
+                </div>
+                <div class="workflow-log-action" style="color: ${colors[type] || colors['info']}">
+                    ${action}
+                </div>
+                ${details ? `<div class="workflow-log-details">${details}</div>` : ''}
+            `;
+
+            container.appendChild(logEntry);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearWorkflowLogs() {
+            const container = document.getElementById('workflow-logs');
+            container.innerHTML = `
+                <div class="no-data">
+                    <i class="fas fa-robot"></i>
+                    <div>No agent activity yet. Send a message to see the workflow.</div>
+                </div>
+            `;
+        }
+
+        // Remediation Functions
+        function addRemediationRequest(alert) {
+            const container = document.getElementById('pending-remediations');
+            const panel = document.getElementById('remediation-panel');
+
+            // Remove "no data" message
+            const noData = container.querySelector('.no-data');
+            if (noData) noData.remove();
+
+            // Show panel if hidden
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+            }
+
+            const remediationId = `rem_${Date.now()}`;
+            pendingRemediations.push({ id: remediationId, alert: alert });
+
+            const severity = alert.severity || 'high';
+            const threatType = alert.threat_type || 'Unknown';
+            const srcIp = alert.src_ip || 'Unknown';
+            const evidence = alert.evidence || {};
+
+            const remediationDiv = document.createElement('div');
+            remediationDiv.className = 'remediation-request';
+            remediationDiv.id = remediationId;
+
+            // Build remediation actions dynamically based on what's available
+            let actionsHtml = '';
+            if (alert.remediation_actions && alert.remediation_actions.length > 0) {
+                // Use the actual remediation actions from the alert
+                alert.remediation_actions.forEach(action => {
+                    const icons = {
+                        'block_ip': 'fa-ban',
+                        'rate_limit': 'fa-clock',
+                        'terminate_session': 'fa-user-slash',
+                        'suspend_user': 'fa-user-lock',
+                        'monitor': 'fa-eye'
+                    };
+                    const icon = icons[action.type] || 'fa-shield-alt';
+
+                    actionsHtml += `
+                    <div class="remediation-action">
+                        <i class="fas ${icon}"></i>
+                        <div>
+                            <strong>Action:</strong> ${action.description || action.type.replace(/_/g, ' ')}<br>
+                            ${action.target ? `<small style="color: var(--text-secondary);">Target: ${action.target}</small>` : ''}
+                        </div>
+                    </div>`;
+                });
+            } else {
+                // Fallback to default actions if remediation_actions not provided
+                actionsHtml = `
+                    <div class="remediation-action">
+                        <i class="fas fa-ban"></i>
+                        <div>
+                            <strong>Action:</strong> Block source IP address<br>
+                            <small style="color: var(--text-secondary);">Target: ${srcIp}</small>
+                        </div>
+                    </div>
+                    <div class="remediation-action">
+                        <i class="fas fa-user-slash"></i>
+                        <div>
+                            <strong>Action:</strong> Suspend user session<br>
+                            <small style="color: var(--text-secondary);">Session: ${alert.session_id || 'N/A'}</small>
+                        </div>
+                    </div>
+                    <div class="remediation-action">
+                        <i class="fas fa-bell"></i>
+                        <div>
+                            <strong>Action:</strong> Alert security team<br>
+                            <small style="color: var(--text-secondary);">Priority: ${severity.toUpperCase()}</small>
+                        </div>
+                    </div>
+                    ${severity === 'critical' ? `
+                    <div class="remediation-action">
+                        <i class="fas fa-lock"></i>
+                        <div>
+                            <strong>Action:</strong> Enable enhanced monitoring<br>
+                            <small style="color: var(--text-secondary);">Duration: 24 hours</small>
+                        </div>
+                    </div>
+                    ` : ''}`;
+            }
+
+            remediationDiv.innerHTML = `
+                <div class="remediation-header">
+                    <div class="remediation-title">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        ${alert.title || 'Security Threat Detected'}
+                    </div>
+                    <div class="remediation-severity ${severity}">${severity}</div>
+                </div>
+
+                <div style="margin-bottom: 0.75rem;">
+                    <strong style="color: var(--warning-color);">Threat Type:</strong> ${threatType}<br>
+                    <strong style="color: var(--warning-color);">Source IP:</strong> ${srcIp}<br>
+                    <strong style="color: var(--warning-color);">Time:</strong> ${new Date().toLocaleString()}
+                </div>
+
+                <div class="remediation-plan">
+                    <div class="remediation-plan-title">
+                        <i class="fas fa-clipboard-list"></i>
+                        Proposed Remediation Plan
+                    </div>
+                    ${actionsHtml}
+                </div>
+
+                <div class="remediation-buttons">
+                    <button class="remediation-btn approve" onclick="approveRemediation('${remediationId}')">
+                        <i class="fas fa-check"></i>
+                        Approve & Execute
+                    </button>
+                    <button class="remediation-btn reject" onclick="rejectRemediation('${remediationId}')">
+                        <i class="fas fa-times"></i>
+                        Reject
+                    </button>
+                </div>
+            `;
+
+            container.appendChild(remediationDiv);
+        }
+
+        function approveRemediation(remediationId) {
+            addWorkflowLog('User', 'Remediation approved by user - executing actions...', 'info');
+
+            // Find the pending remediation
+            const pendingRem = pendingRemediations.find(r => r.id === remediationId);
+            if (!pendingRem) {
+                console.error('Remediation not found:', remediationId);
+                showNotification('❌ Remediation not found', 'danger');
+                return;
+            }
+
+            const alert = pendingRem.alert;
+            const remediationActions = alert.remediation_actions || [];
+
+            if (remediationActions.length === 0) {
+                console.error('No remediation actions found in alert');
+                showNotification('❌ No remediation actions to execute', 'danger');
+                return;
+            }
+
+            // Execute each remediation action by calling the backend
+            let executedCount = 0;
+            const totalActions = remediationActions.filter(a => a.pending).length;
+
+            remediationActions.forEach((action, index) => {
+                if (!action.pending) return; // Skip already executed actions
+
+                fetch('/api/execute-remediation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        action_type: action.type,
+                        target: action.target,
+                        alert_id: alert.alert_id,
+                        session_id: sessionId,
+                        csrf_token: csrfToken
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        executedCount++;
+                        console.log(`✅ Executed ${action.type} on ${action.target}`);
+
+                        // If all actions executed, update UI
+                        if (executedCount === totalActions) {
+                            const remDiv = document.getElementById(remediationId);
+                            if (remDiv) {
+                                remDiv.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)';
+                                remDiv.style.borderLeftColor = 'var(--success-color)';
+
+                                setTimeout(() => {
+                                    remDiv.remove();
+                                    checkIfRemediationsEmpty();
+                                }, 2000);
+                            }
+
+                            // Remove from pending list
+                            pendingRemediations = pendingRemediations.filter(r => r.id !== remediationId);
+                            showNotification('✅ All remediation actions executed successfully', 'success');
+                        }
+                    } else {
+                        console.error(`Failed to execute ${action.type}:`, data.error);
+                        showNotification(`❌ Failed to execute ${action.type}: ${data.error || 'Unknown error'}`, 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error(`Error executing ${action.type}:`, error);
+                    showNotification(`❌ Error executing ${action.type}`, 'danger');
+                });
+            });
+        }
+
+        function rejectRemediation(remediationId) {
+            addWorkflowLog('SOC Analyst', 'Remediation rejected by user - marked as false positive', 'warning');
+
+            const remDiv = document.getElementById(remediationId);
+            if (remDiv) {
+                remDiv.remove();
+                checkIfRemediationsEmpty();
+            }
+
+            // Remove from pending list
+            pendingRemediations = pendingRemediations.filter(r => r.id !== remediationId);
+
+            showNotification('Remediation rejected', 'warning');
+        }
+
+        function clearRemediations() {
+            const container = document.getElementById('pending-remediations');
+            container.innerHTML = `
+                <div class="no-data">
+                    <i class="fas fa-check-circle"></i>
+                    <div>No pending remediations</div>
+                </div>
+            `;
+            pendingRemediations = [];
+        }
+
+        function checkIfRemediationsEmpty() {
+            const container = document.getElementById('pending-remediations');
+            if (container.children.length === 0) {
+                clearRemediations();
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,17 +1,4 @@
 # Core dependencies for SOC AI Agents
-asyncio
-logging
-json
-time
-random
-pathlib
-dataclasses
-typing
-enum
-re
-subprocess
-
-# Security and validation dependencies
 jsonschema>=4.0.0
 
 # Web interface dependencies (optional)
@@ -19,3 +6,30 @@ flask>=2.0.0
 flask-socketio>=5.0.0
 python-socketio>=5.0.0
 eventlet>=0.33.0
+flask-cors>=4.0.0
+flask-limiter>=3.0.0
+openai>=1.0.0
+requests>=2.31.0
+python-dotenv>=1.0.0
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0
+redis>=4.0.0
+
+# Machine Learning & Semantic Detection (NEW)
+numpy>=1.24.0
+sentence-transformers>=2.2.0
+scikit-learn>=1.3.0
+torch>=2.0.0
+
+# Cloud Provider SDKs (for production remediation)
+boto3>=1.28.0  # AWS
+google-cloud-compute>=1.14.0  # GCP
+azure-mgmt-network>=25.0.0  # Azure
+
+# Observability & Monitoring
+prometheus-client>=0.17.0
+structlog>=23.1.0
+
+# Advanced Features
+psycopg2-cffi>=2.9.0  # Better PostgreSQL driver
+redis-py-cluster>=2.1.3  # Redis clustering support

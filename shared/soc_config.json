@@ -5,7 +5,11 @@
     "scan_paths": [
       ".",
       "..",
-      "../.."
+      "../..",
+      "./dev_agents",
+      "./code_assistants",
+      "./medical_agents",
+      "./healthcare_ai"
     ],
     "monitoring_interval": 1.0,
     "log_retention_days": 30
@@ -44,7 +48,8 @@
       "MED_001",
       "FIN_001",
       "RATE_001",
-      "MAL_INP_001"
+      "MAL_INP_001",
+      "PRIVACY_VIOLATION"
     ],
     "custom_rules": []
   },
@@ -92,6 +97,11 @@
       "enabled": false,
       "url": "",
       "headers": {}
+    },
+    "compliance_notifications": {
+      "enabled": true,
+      "hipaa_compliance": true,
+      "audit_logging": true
     }
   }
 }

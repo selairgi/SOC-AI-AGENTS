@@ -1,0 +1,15 @@
+# Machine Learning Dependencies for SOC AI Agents (Development/Testing)
+# Install with: pip install -r requirements-base.txt -r requirements-ml.txt
+
+# Heavy ML Dependencies (Only for development/testing with semantic detector)
+torch~=2.1.0
+sentence-transformers~=2.2.2
+
+# Note: These are only used in:
+# - tests/test_semantic_detector.py
+# - security/semantic_detector.py (not used in production)
+#
+# Production deployment uses intelligent_prompt_detector.py instead,
+# which only requires numpy and scikit-learn (already in requirements-base.txt)
+#
+# Total additional size: ~2.3GB
