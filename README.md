@@ -35,11 +35,6 @@ An advanced, AI-powered Security Operations Center (SOC) that protects your appl
 - **Threat history** - Detailed attack logs
 - **Learning progress** - Track detection improvement
 
-### 🎨 Modern Web Interface
-- **Beautiful UI** - Gradient design with dark theme
-- **Chat interface** - Test security in real-time
-- **Dashboard** - Visualize threats and metrics
-- **Responsive** - Works on all devices
 
 ## 🚀 Quick Start
 
@@ -53,8 +48,7 @@ An advanced, AI-powered Security Operations Center (SOC) that protects your appl
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/soc-ai-agents.git
-   cd soc-ai-agents
+   git clone [https://github.com/yourusername/soc-ai-agents.git](https://github.com/selairgi/SOC-AI-AGENTS)
    ```
 
 2. **Install dependencies**
@@ -78,7 +72,7 @@ An advanced, AI-powered Security Operations Center (SOC) that protects your appl
    http://localhost:5000
    ```
 
-### Docker Deployment
+### Docker Deployment ( Recommended )
 
 ```bash
 # Build and run with Docker Compose
@@ -192,10 +186,7 @@ cd mini_clone
 python test_learning_workflow.py
 ```
 
-### 3. Bug Bounty Programs
-Test your AI systems for prompt injection vulnerabilities before attackers do.
-
-### 4. Security Training
+### 3. Security Training
 Learn about AI security threats through hands-on testing.
 
 ## 📊 Performance
@@ -788,42 +779,6 @@ GET /api/learning/metrics
 GET /api/learning/export-patterns
 ```
 
-## 🛠️ Development
-
-### Project Structure
-
-```
-soc-ai-agents/
-├── ai/                          # AI integration
-│   └── ai_integration.py        # OpenAI client
-├── security/                    # Security core
-│   ├── security_pipeline.py     # Main SOC pipeline
-│   ├── threat_detector.py       # 13 detection methods
-│   ├── incremental_learning.py  # Learning system
-│   └── behavioral_analyzer.py   # Behavioral analysis
-├── shared/                      # Shared utilities
-│   ├── agent_memory.py          # Database abstraction
-│   ├── constants.py             # Configuration
-│   └── models.py                # Data models
-├── web/                         # Web interface
-│   ├── app.py                   # Flask application
-│   ├── templates/               # HTML templates
-│   └── static/                  # CSS, JS, images
-├── mini_clone/                  # Testing environment
-│   ├── test_learning_workflow.py
-│   └── ...
-├── docker-compose.yml           # Docker configuration
-├── requirements.txt             # Dependencies
-└── README.md                    # This file
-```
-
-### Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
 ## 📄 License
 
@@ -836,45 +791,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **SQLite** - Database engine
 - **Community** - For security research and feedback
 
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/yourusername/soc-ai-agents/issues)
-- **Documentation**: [Full Documentation](INCREMENTAL_LEARNING_GUIDE.md)
-
-## 🗺️ Roadmap
-
-### Version 2.0 (Q1 2026)
-- [ ] Multi-model support (Claude, Gemini, LLaMA)
-- [ ] Advanced threat visualization
-- [ ] Team collaboration features
-- [ ] WebSocket for real-time updates
-
-### Version 2.5 (Q2 2026)
-- [ ] Machine learning-based anomaly detection
-- [ ] Integration with SIEM systems
-- [ ] Automated penetration testing
-- [ ] Multi-language support
-
-### Version 3.0 (Q3 2026)
-- [ ] Distributed learning across instances
-- [ ] Enterprise SSO integration
-- [ ] Advanced analytics dashboard
-- [ ] Mobile app
-
-## 📊 Stats
-
-- **Detection Methods**: 13+
-- **Learning Variations**: 15 per attack
-- **Average Detection Rate**: 85-95%
-- **Processing Time**: <100ms
-- **Lines of Code**: ~5,000
-- **Test Coverage**: 77%
-
-## 🎓 Learn More
-
-- **Incremental Learning Guide**: [INCREMENTAL_LEARNING_GUIDE.md](INCREMENTAL_LEARNING_GUIDE.md)
-- **Mini Clone Testing**: [mini_clone/TESTING_GUIDE.md](mini_clone/TESTING_GUIDE.md)
-- **Implementation Summary**: [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md)
 
 ## ⭐ Star Us!
 
