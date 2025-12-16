@@ -48,7 +48,7 @@ An advanced, AI-powered Security Operations Center (SOC) that protects your appl
 
 1. **Clone the repository**
    ```bash
-   git clone [https://github.com/yourusername/soc-ai-agents.git](https://github.com/selairgi/SOC-AI-AGENTS)
+   git clone https://github.com/selairgi/SOC-AI-AGENTS
    ```
 
 2. **Install dependencies**
