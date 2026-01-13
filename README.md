@@ -28,49 +28,49 @@ Protect AI-powered applications from prompt injection attacks through a **4-laye
                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                   SECURITY PIPELINE                             │
-│  ┌───────────────────────────────────────────────────────┐     │
-│  │  Layer 1: Intelligent Detector (LLM-Based)            │     │
-│  │  ✓ GPT-4 pattern analysis                             │     │
-│  │  ✓ Context-aware threat recognition                   │     │
-│  └───────────────────────────────────────────────────────┘     │
-│                         │                                        │
-│                         ▼                                        │
-│  ┌───────────────────────────────────────────────────────┐     │
-│  │  Layer 2: Formal Analyzer V5.2 (NLP + Format Abuse)  │     │
-│  │  ✓ Syntax tree parsing                                │     │
-│  │  ✓ Format-based attack detection                      │     │
-│  │  ✓ High-certainty verdicts (88-96%)                   │     │
-│  └───────────────────────────────────────────────────────┘     │
-│                         │                                        │
-│                         ▼                                        │
-│  ┌───────────────────────────────────────────────────────┐     │
-│  │  Layer 3: Semantic Detector (Authority + Logic Traps) │     │
-│  │  ✓ Authority impersonation detection                  │     │
-│  │  ✓ Logical manipulation scoring                       │     │
-│  └───────────────────────────────────────────────────────┘     │
-│                         │                                        │
-│                         ▼                                        │
-│  ┌───────────────────────────────────────────────────────┐     │
-│  │  Layer 4: ML Ensemble (XGBoost + Embeddings + Sleuth)│     │
-│  │  ✓ XGBoost classifier (18 features)                   │     │
-│  │  ✓ Sentence-BERT embeddings                           │     │
-│  │  ✓ PromptSleuth task graph analysis                   │     │
-│  └───────────────────────────────────────────────────────┘     │
-│                         │                                        │
-│                         ▼                                        │
-│  ┌───────────────────────────────────────────────────────┐     │
-│  │         VERDICT FUSION + FALSE POSITIVE FILTER        │     │
-│  │  ✓ Multi-layer consensus                              │     │
-│  │  ✓ Confidence-based decision                          │     │
-│  │  ✓ Adaptive FP reduction                              │     │
-│  └───────────────────────────────────────────────────────┘     │
+│  ┌───────────────────────────────────────────────────────┐      │
+│  │  Layer 1: Intelligent Detector (LLM-Based)            │      │
+│  │  ✓ GPT-4 pattern analysis                             │      │
+│  │  ✓ Context-aware threat recognition                   │      │
+│  └───────────────────────────────────────────────────────┘      │
+│                         │                                       │
+│                         ▼                                       │
+│  ┌───────────────────────────────────────────────────────┐      │
+│  │  Layer 2: Formal Analyzer V5.2 (NLP + Format Abuse)   │      │
+│  │  ✓ Syntax tree parsing                                │      │
+│  │  ✓ Format-based attack detection                      │      │
+│  │  ✓ High-certainty verdicts (88-96%)                   │      │
+│  └───────────────────────────────────────────────────────┘      │
+│                         │                                       │
+│                         ▼                                       │
+│  ┌───────────────────────────────────────────────────────┐      │
+│  │  Layer 3: Semantic Detector (Authority + Logic Traps) │      │
+│  │  ✓ Authority impersonation detection                  │      │
+│  │  ✓ Logical manipulation scoring                       │      │
+│  └───────────────────────────────────────────────────────┘      │
+│                         │                                       │
+│                         ▼                                       │
+│  ┌───────────────────────────────────────────────────────┐      │
+│  │  Layer 4: ML Ensemble (XGBoost + Embeddings + Sleuth) │      │
+│  │  ✓ XGBoost classifier (18 features)                   │      │
+│  │  ✓ Sentence-BERT embeddings                           │      │
+│  │  ✓ PromptSleuth task graph analysis                   │      │
+│  └───────────────────────────────────────────────────────┘      │
+│                         │                                       │
+│                         ▼                                       │
+│  ┌───────────────────────────────────────────────────────┐      │
+│  │         VERDICT FUSION + FALSE POSITIVE FILTER        │      │
+│  │  ✓ Multi-layer consensus                              │      │
+│  │  ✓ Confidence-based decision                          │      │
+│  │  ✓ Adaptive FP reduction                              │      │
+│  └───────────────────────────────────────────────────────┘      │
 └────────────────────────┬────────────────────────────────────────┘
                          │
                          ▼
             ┌────────────┴───────────┐
             │                        │
     ┌───────▼───────┐       ┌───────▼────────┐
-    │  🚫 BLOCKED   │       │  ✅ ALLOWED    │
+    │  🚫 BLOCKED   │       │  ✅ ALLOWED   │
     │   + Alert     │       │   + Processed  │
     └───────────────┘       └────────────────┘
 ```
@@ -349,34 +349,34 @@ Step 5: CONFIDENCE CALCULATION
 │                         BIPARTITE GRAPH                             │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
-│   PARENT TASKS (System)           CHILD TASKS (User Input)         │
+│   PARENT TASKS (System)           CHILD TASKS (User Input)          │
 │                                                                     │
-│   ┌────────────────┐              ┌──────────────────┐            │
-│   │ answer         │◄─RELATED────►│ explain          │            │
-│   │ questions      │   (0.95)     │ photosynthesis   │            │
-│   └────────────────┘              └──────────────────┘            │
-│          │                                                         │
-│          │ UNRELATED (1.0)                                         │
-│          │                                                         │
-│          ▼                         ┌──────────────────┐            │
-│   ┌────────────────┐              │ ignore           │            │
-│   │ help with      │◄─UNRELATED───┤ instructions     │            │
-│   │ science        │   (1.0)      └──────────────────┘            │
-│   └────────────────┘                      │                        │
-│          │                                │                        │
-│          │ RELATED (0.97)                 │ UNRELATED (0.98)       │
-│          │                                │                        │
-│          ▼                                ▼                        │
-│   ┌────────────────┐              ┌──────────────────┐            │
-│   │ (back to       │◄─UNRELATED───┤ reveal system    │            │
-│   │  explain       │   (0.95)     │ prompt           │            │
-│   │  photo...)     │              └──────────────────┘            │
-│   └────────────────┘                                              │
+│   ┌────────────────┐              ┌──────────────────┐              │
+│   │ answer         │◄─RELATED────►│ explain          │              │
+│   │ questions      │   (0.95)     │ photosynthesis   │              │
+│   └────────────────┘              └──────────────────┘              │
+│          │                                                          │
+│          │ UNRELATED (1.0)                                          │
+│          │                                                          │
+│          ▼                        ┌──────────────────┐              │
+│   ┌────────────────┐              │ ignore           │              │
+│   │ help with      │◄─UNRELATED───┤ instructions     │              │
+│   │ science        │   (1.0)      └──────────────────┘              │
+│   └────────────────┘                      │                         │
+│          │                                │                         │
+│          │ RELATED (0.97)                 │ UNRELATED (0.98)        │
+│          │                                │                         │
+│          ▼                                ▼                         │
+│   ┌────────────────┐              ┌──────────────────┐              │
+│   │ (back to       │◄─UNRELATED───┤ reveal system    │              │
+│   │  explain       │   (0.95)     │ prompt           │              │
+│   │  photo...)     │              └──────────────────┘              │
+│   └────────────────┘                                                │
 │                                                                     │
-│   Legend:                                                          │
-│   ◄─RELATED──►    = Related (legitimate task)                     │
-│   ◄─UNRELATED──►  = Unrelated (suspicious injection)              │
-│   ◄─UNCERTAIN──►  = Uncertain (ambiguous)                         │
+│   Legend:                                                           │
+│   ◄─RELATED──►    = Related (legitimate task)                       │
+│   ◄─UNRELATED──►  = Unrelated (suspicious injection)                │
+│   ◄─UNCERTAIN──►  = Uncertain (ambiguous)                           │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 
@@ -616,7 +616,7 @@ similarity_threshold: 0.7  # For deduplication
 
 ---
 
-## 🤝 AI Agents System
+##  AI Agents System
 
 The system uses **specialized AI agents** for different security tasks:
 
@@ -660,31 +660,31 @@ The system uses **PostgreSQL** for persistent storage of alerts, feedback, and l
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    POSTGRESQL DATABASE                       │
-│                       (Port 5432)                            │
+│                    POSTGRESQL DATABASE                      │
+│                       (Port 5432)                           │
 ├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌──────────────────────┐    ┌──────────────────────┐     │
-│  │  alert_history       │    │  operator_feedback   │     │
-│  ├──────────────────────┤    ├──────────────────────┤     │
-│  │ • alert_id (PK)      │    │ • id (PK)            │     │
-│  │ • message            │    │ • alert_id (FK)      │     │
-│  │ • user_id            │    │ • message            │     │
-│  │ • session_id         │    │ • predicted_label    │     │
-│  │ • severity           │    │ • actual_label       │     │
-│  │ • threat_type        │    │ • operator_notes     │     │
-│  │ • detection_method   │    │ • feedback_timestamp │     │
-│  │ • confidence         │    │                      │     │
-│  │ • reasoning[]        │    │                      │     │
-│  │ • timestamp          │    │                      │     │
-│  └──────────────────────┘    └──────────────────────┘     │
+│                                                             │
+│  ┌──────────────────────┐    ┌──────────────────────┐       │
+│  │  alert_history       │    │  operator_feedback   │       │
+│  ├──────────────────────┤    ├──────────────────────┤       │
+│  │ • alert_id (PK)      │    │ • id (PK)            │       │
+│  │ • message            │    │ • alert_id (FK)      │       │
+│  │ • user_id            │    │ • message            │       │
+│  │ • session_id         │    │ • predicted_label    │       │
+│  │ • severity           │    │ • actual_label       │       │
+│  │ • threat_type        │    │ • operator_notes     │       │
+│  │ • detection_method   │    │ • feedback_timestamp │       │
+│  │ • confidence         │    │                      │       │
+│  │ • reasoning[]        │    │                      │       │
+│  │ • timestamp          │    │                      │       │
+│  └──────────────────────┘    └──────────────────────┘       │
 │           │                            │                    │
 │           └────────────────┬───────────┘                    │
 │                            │                                │
 │                            ▼                                │
 │                  Adaptive Learning System                   │
 │                  (False Positive Reduction)                 │
-│                                                              │
+│                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -959,7 +959,7 @@ docker run --rm -v soc-ai-agents_postgres_data:/data -v $(pwd):/backup \
 #### **V7.1 Performance on 500 Prompts**:
 
 | Metric                  | Value      |
-|------------------------|------------ |
+|-------------------------|------------|
 | **Detection Rate**      | 67.73%     |
 | **False Positive Rate** | 6.83%      |
 | **Precision**           | 90.91%     |
@@ -1099,17 +1099,6 @@ python train_ml_ensemble.py
 - **Docker Compose**: Multi-container orchestration
 - **Cloudflare Tunnel**: Secure public access
 
----
-
-## 📈 Roadmap
-
-- [ ] Support for Claude/Gemini as LLM detectors
-- [ ] Active learning from false negatives
-- [ ] Multi-language support (beyond English)
-- [ ] Real-time threat intelligence feed integration
-- [ ] Kubernetes deployment configs
-- [ ] REST API for third-party integration
-
 
 ---
 
@@ -1121,7 +1110,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **PromptSleuth**: Task graph analysis framework
+- **PromptSleuth**: Task graph analysis framework [PromptSleuth](https://arxiv.org/abs/2508.20890)
 
 
 
