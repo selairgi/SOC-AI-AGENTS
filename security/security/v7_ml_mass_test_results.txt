@@ -1,0 +1,35 @@
+================================================================================
+V7+ML MASS TEST - 1000 PROMPTS
+================================================================================
+Loaded 1000 prompts
+
+[OK] Loaded XGBoost model from security\.cache\xgb_model.pkl
+[OK] Loaded attack embeddings from security\.cache\attack_embeddings.pkl (500 attacks)
+Layers initialized. Testing...
+
+Progress: 100/1000 | DR=64.3% FPR=0.0% | TP=27 FP=0 TN=58 FN=15
+Progress: 200/1000 | DR=66.3% FPR=0.0% | TP=65 FP=0 TN=102 FN=33
+Progress: 300/1000 | DR=65.8% FPR=0.0% | TP=96 FP=0 TN=154 FN=50
+Progress: 400/1000 | DR=69.7% FPR=0.0% | TP=136 FP=0 TN=205 FN=59
+Progress: 500/1000 | DR=68.2% FPR=0.0% | TP=174 FP=0 TN=245 FN=81
+Progress: 600/1000 | DR=67.0% FPR=0.0% | TP=207 FP=0 TN=291 FN=102
+Progress: 700/1000 | DR=66.7% FPR=0.0% | TP=238 FP=0 TN=343 FN=119
+Progress: 800/1000 | DR=66.8% FPR=0.0% | TP=270 FP=0 TN=396 FN=134
+Progress: 900/1000 | DR=67.5% FPR=0.0% | TP=309 FP=0 TN=442 FN=149
+Progress: 1000/1000 | DR=68.0% FPR=0.0% | TP=340 FP=0 TN=500 FN=160
+
+================================================================================
+RESULTS
+================================================================================
+TP=340 FP=0 TN=500 FN=160
+Detection Rate: 68.0%
+FPR: 0.0%
+Precision: 100.0%
+F1: 0.810
+Security Score: 68.0%
+Time: 65.0s (65.0ms/prompt)
+
+Detection patterns:
+  ml: 310
+  ml+semantic: 22
+  semantic: 8

@@ -16,6 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from shared.models import Alert, LogEntry, ThreatType
+from security.adaptive_learning_system import AdaptiveLearningSystem
 
 
 @dataclass
@@ -70,6 +71,33 @@ class FalsePositiveDetector:
             r"i (want|need) to (know|understand|learn)",
         ]
 
+        # PRIORITY 1 FIX: Legitimate technical/educational patterns
+        # These patterns caused 48.3% FPR on Level 2 prompts
+        self.legitimate_technical_patterns = [
+            # Technical help requests
+            r"^can you (help|assist|show) me (create|write|design|implement|build)",
+            r"^(help|show) me (how to|how)",
+            r"^i need help (with|to|creating|designing|implementing)",
+
+            # System-related but legitimate
+            r"(design|create|build) a system (for|to)",
+            r"how (does|do) (a |an )?(computer|operating|file|database|distributed) system work",
+            r"what is (a |an )?(operating|file|database|distributed) system",
+
+            # Algorithm/coding help
+            r"(implement|write|create) (a |an )?(algorithm|function|script|program) (for|to)",
+            r"help.*?(implement|write|create).*(algorithm|function|code)",
+
+            # Educational AI questions
+            r"(what|how) (is|are|does) (your|the)\s+(token limit|context window|training|architecture)",
+            r"(explain|describe|what is)\s+(machine learning|neural network|AI|transformer|attention mechanism)",
+            r"how (do|does)\s+(you|transformers|neural networks|AI systems)\s+(work|process|understand)",
+
+            # Comparison questions
+            r"^what'?s? the difference between",
+            r"^compare\s+\w+\s+(and|to|with)",
+        ]
+
         # Legitimate context keywords
         self.legitimate_context_keywords = [
             "help", "tutorial", "learn", "understand", "explain",
@@ -86,6 +114,11 @@ class FalsePositiveDetector:
             r"[\[\{].*?(system|admin|root).*?[\]\}]",
             r"sudo|chmod|rm -rf|DROP TABLE",
             r"(show|give|tell).*(password|api[_\s]key|secret|token|credential)",
+            # CTF Flag extraction patterns (HIGH PRIORITY)
+            r"(help|can you|please).*(identify|find|get|extract|show|reveal).*(flag|ctf|secret|password|key|token)",
+            r"(complete|write|generate).*(code|script).*(flag|secret|password|key)",
+            r"for my (project|research|academy|university).*(flag|secret|password|key|token)",
+            r"(flag|secret|password).*(project|academy|research|assignment)",
         ]
 
         # Confidence thresholds
@@ -105,6 +138,10 @@ class FalsePositiveDetector:
             "medium_confidence": 0,
             "low_confidence": 0
         }
+
+        # NOUVEAU: Système d'apprentissage adaptatif
+        self.adaptive_learner = AdaptiveLearningSystem()
+        self.logger.info("✅ Adaptive learning system initialized")
 
     def analyze_alert(
         self,
@@ -126,6 +163,23 @@ class FalsePositiveDetector:
         self.stats["total_analyzed"] += 1
         self.logger.debug(f"Analyzing alert {alert.id} for false positives")
 
+        # PRIORITY 1 FIX: Check legitimate technical patterns FIRST
+        # These patterns have very high confidence of being false positives
+        message_lower = log.message.lower()
+        for pattern in self.legitimate_technical_patterns:
+            if re.match(pattern, message_lower):
+                self.logger.info(
+                    f"[FP_TECHNICAL] Legitimate technical pattern matched: {pattern[:50]}"
+                )
+                self.stats["false_positives_detected"] += 1
+                return FalsePositiveScore(
+                    alert_id=alert.id,
+                    false_positive_probability=0.95,  # Very high FP probability
+                    confidence_factors={"legitimate_technical_pattern": 1.0},
+                    reasoning=[f"Legitimate technical/educational query pattern matched: {pattern[:80]}"],
+                    recommended_action="ignore"
+                )
+
         confidence_factors = {}
         reasoning = []
 
@@ -136,7 +190,7 @@ class FalsePositiveDetector:
             log.message, alert.threat_type
         )
         # Invert: if message looks legitimate (high pattern_score), threat confidence should be LOW
-        confidence_factors["pattern_legitimacy"] = (1.0 - pattern_score) * 0.30
+        confidence_factors["pattern_legitimacy"] = (1.0 - pattern_score) * 0.20  # Reduced from 0.30 to prioritize threat indicators
         reasoning.extend(pattern_reasoning)
 
         # Factor 2: User behavior (25% weight)
@@ -159,11 +213,11 @@ class FalsePositiveDetector:
         confidence_factors["context_awareness"] = (1.0 - context_score) * 0.25
         reasoning.extend(context_reasoning)
 
-        # Factor 4: Threat confidence indicators (20% weight)
+        # Factor 4: Threat confidence indicators (30% weight) - Increased for CTF flag protection
         threat_score, threat_reasoning = self._analyze_threat_indicators(
             log.message, alert.threat_type
         )
-        confidence_factors["threat_indicators"] = threat_score * 0.20
+        confidence_factors["threat_indicators"] = threat_score * 0.30  # Increased from 0.20 for better flag extraction detection
         reasoning.extend(threat_reasoning)
 
         # Calculate overall false positive probability
@@ -171,6 +225,17 @@ class FalsePositiveDetector:
         # Higher score = more likely to be real threat
         threat_confidence = sum(confidence_factors.values())
         false_positive_probability = 1.0 - threat_confidence
+
+        # NOUVEAU: Apply learned boost from adaptive learning
+        learned_fp_boost = self.adaptive_learner.get_fp_boost(log.message)
+        learned_threat_boost = self.adaptive_learner.get_threat_boost(log.message)
+
+        if learned_fp_boost > 0:
+            false_positive_probability = min(1.0, false_positive_probability + learned_fp_boost)
+            reasoning.append(f"📚 Learned FP pattern: +{learned_fp_boost*100:.0f}% FP boost")
+        if learned_threat_boost > 0:
+            false_positive_probability = max(0.0, false_positive_probability - learned_threat_boost)
+            reasoning.append(f"⚠️ Learned threat pattern: +{learned_threat_boost*100:.0f}% threat boost")
 
         # Update alert with false positive probability
         alert.false_positive_probability = false_positive_probability
@@ -387,7 +452,9 @@ class FalsePositiveDetector:
                 threat_matches += 1
 
         # Calculate threat confidence
-        score = min(1.0, threat_matches * 0.4)
+        # Increased multiplier from 0.4 to 0.7 for better CTF flag protection
+        # 1 match = 0.7, 2+ matches = 1.0 (maximum confidence)
+        score = min(1.0, threat_matches * 0.7)
         return score, reasoning
 
     def _check_basic_grammar(self, message: str) -> bool:

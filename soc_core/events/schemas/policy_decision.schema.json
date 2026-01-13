@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "policy_decision.schema.json",
+  "title": "PolicyDecision",
+  "description": "Event emitted when a policy evaluation is completed for a remediation proposal",
+  "type": "object",
+  "required": ["event_id", "correlation_id", "timestamp", "producer", "payload"],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "Unique identifier for this event instance",
+      "pattern": "^[a-f0-9-]{36}$"
+    },
+    "correlation_id": {
+      "type": "string",
+      "description": "Identifier to correlate related events across the pipeline",
+      "pattern": "^[a-f0-9-]{36}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 timestamp when the event was created"
+    },
+    "producer": {
+      "type": "string",
+      "description": "Identifier of the component that produced this event",
+      "const": "policy_agent"
+    },
+    "payload": {
+      "type": "object",
+      "required": ["decision_id", "remediation_id", "decision", "reason"],
+      "properties": {
+        "decision_id": {
+          "type": "string",
+          "description": "Unique identifier for this policy decision"
+        },
+        "remediation_id": {
+          "type": "string",
+          "description": "Reference to the playbook_id from RemediationProposed"
+        },
+        "alert_id": {
+          "type": "string",
+          "description": "Reference to the original alert"
+        },
+        "decision": {
+          "type": "string",
+          "enum": ["allow", "deny", "require_human"],
+          "description": "The policy decision for this remediation"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Human-readable explanation for the decision"
+        },
+        "matched_rules": {
+          "type": "array",
+          "description": "List of policy rules that matched",
+          "items": {
+            "type": "object",
+            "properties": {
+              "rule_id": { "type": "string" },
+              "rule_name": { "type": "string" },
+              "decision": { "type": "string" }
+            }
+          }
+        },
+        "evaluated_actions": {
+          "type": "array",
+          "description": "Per-action evaluation results",
+          "items": {
+            "type": "object",
+            "properties": {
+              "action_id": { "type": "string" },
+              "action_type": { "type": "string" },
+              "decision": { "type": "string" },
+              "reason": { "type": "string" }
+            }
+          }
+        },
+        "policy_version": {
+          "type": "string",
+          "description": "Version of the policy file used for evaluation"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

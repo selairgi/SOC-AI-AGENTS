@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "analysis_completed.schema.json",
+  "title": "AnalysisCompleted",
+  "description": "Event emitted when the SOC Analyst completes analysis of an alert",
+  "type": "object",
+  "required": ["event_id", "correlation_id", "timestamp", "producer", "payload"],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "Unique identifier for this event instance",
+      "pattern": "^[a-f0-9-]{36}$"
+    },
+    "correlation_id": {
+      "type": "string",
+      "description": "Identifier to correlate related events across the pipeline",
+      "pattern": "^[a-f0-9-]{36}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 timestamp when the event was created"
+    },
+    "producer": {
+      "type": "string",
+      "description": "Identifier of the component that produced this event",
+      "examples": ["soc_analyst", "false_positive_detector"]
+    },
+    "payload": {
+      "type": "object",
+      "required": ["alert_id", "analysis_id", "verdict", "certainty_score"],
+      "properties": {
+        "alert_id": {
+          "type": "string",
+          "description": "Reference to the original alert being analyzed"
+        },
+        "analysis_id": {
+          "type": "string",
+          "description": "Unique identifier for this analysis"
+        },
+        "verdict": {
+          "type": "string",
+          "enum": ["true_positive", "false_positive", "requires_investigation", "inconclusive"],
+          "description": "The analyst's verdict on the alert"
+        },
+        "certainty_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence in the verdict (0.0-1.0)"
+        },
+        "false_positive_probability": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Probability that this alert is a false positive"
+        },
+        "reasoning": {
+          "type": "string",
+          "description": "Explanation of the analysis decision"
+        },
+        "analysis_factors": {
+          "type": "object",
+          "description": "Factors considered during analysis",
+          "properties": {
+            "user_history_score": {
+              "type": "number",
+              "description": "Score based on user's historical behavior"
+            },
+            "pattern_legitimacy_score": {
+              "type": "number",
+              "description": "Score for pattern legitimacy"
+            },
+            "context_score": {
+              "type": "number",
+              "description": "Score based on session/request context"
+            },
+            "behavioral_indicators": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "recommended_action": {
+          "type": "string",
+          "enum": ["block", "investigate", "ignore", "escalate", "monitor"],
+          "description": "Recommended next action based on analysis"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

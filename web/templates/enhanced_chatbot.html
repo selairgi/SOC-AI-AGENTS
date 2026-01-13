@@ -238,6 +238,51 @@
             transform: translateY(-2px);
         }
 
+        .btn-feedback {
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .btn-feedback:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-safe {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-safe:hover:not(:disabled) {
+            background: rgba(34, 197, 94, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-threat {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-threat:hover:not(:disabled) {
+            background: rgba(239, 68, 68, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .feedback-status.submitted {
+            color: #22c55e;
+            font-weight: 600;
+        }
+
         .chat-messages {
             flex: 1;
             padding: 1.5rem;
@@ -1323,6 +1368,11 @@
         socket.on('security_alert', function(data) {
             console.log('🚨 Security Alert Received:', data);
 
+            // Log LLM explanation if available
+            if (data.llm_explanation) {
+                console.log('🤖 SOC Analyst Explanation:', data.llm_explanation);
+            }
+
             // Add to alerts panel
             addSecurityAlert(data);
             updateMetrics();
@@ -1627,6 +1677,16 @@
                 <div style="font-weight: 600; margin-bottom: 0.5rem;">${alert.title}</div>
                 <div style="font-size: 0.85rem; color: var(--text-secondary);">${alert.description}</div>
                 ${remediationHtml}
+                <div class="feedback-buttons" style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.1); display: flex; gap: 0.5rem; align-items: center;">
+                    <span style="font-size: 0.75rem; color: var(--text-secondary); margin-right: 0.5rem;">Feedback:</span>
+                    <button class="btn-feedback btn-safe" onclick="submitFeedback('${alert.alert_id}', 'safe')" title="Mark as Safe (False Positive - Educational Question)">
+                        <i class="fas fa-check-circle"></i> Safe
+                    </button>
+                    <button class="btn-feedback btn-threat" onclick="submitFeedback('${alert.alert_id}', 'threat')" title="Mark as Threat (Confirmed Attack)">
+                        <i class="fas fa-exclamation-triangle"></i> Threat
+                    </button>
+                    <span class="feedback-status" id="feedback-${alert.alert_id}" style="font-size: 0.7rem; color: var(--text-secondary); margin-left: auto;"></span>
+                </div>
             `;
 
             container.insertBefore(alertDiv, container.firstChild);
@@ -1714,6 +1774,81 @@
         function hideTypingIndicator() {
             document.getElementById('typing-indicator').classList.remove('show');
             document.getElementById('send-btn').disabled = false;
+        }
+
+        function submitFeedback(alertId, actualLabel) {
+            console.log('Submitting feedback:', { alertId, actualLabel });
+
+            // Disable buttons to prevent double-click
+            const buttons = document.querySelectorAll(`button[onclick*="${alertId}"]`);
+            buttons.forEach(btn => btn.disabled = true);
+
+            // Show loading status
+            const statusEl = document.getElementById(`feedback-${alertId}`);
+            if (statusEl) {
+                statusEl.textContent = 'Sending...';
+            }
+
+            fetch('/api/feedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    alert_id: alertId,
+                    actual_label: actualLabel,
+                    csrf_token: csrfToken
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const icon = actualLabel === 'safe' ? '✅' : '❌';
+                    const label = actualLabel === 'safe' ? 'Safe (FP)' : 'Threat';
+                    const color = actualLabel === 'safe' ? '#22c55e' : '#ef4444';
+
+                    // Update status
+                    if (statusEl) {
+                        statusEl.textContent = `${icon} ${label}`;
+                        statusEl.className = 'feedback-status submitted';
+                        statusEl.style.color = color;
+                    }
+
+                    // Show success notification
+                    showNotification(
+                        `Feedback recorded: ${label}. System is learning!`,
+                        'success'
+                    );
+
+                    // Add workflow log
+                    addWorkflowLog(
+                        'Operator',
+                        `Feedback: ${label}`,
+                        actualLabel === 'safe' ? 'success' : 'warning',
+                        `Alert ID: ${alertId} | Learning stats: ${data.learning_stats?.total_feedback || 0} samples`
+                    );
+
+                    console.log('Feedback submitted successfully:', data);
+                } else {
+                    // Re-enable buttons on error
+                    buttons.forEach(btn => btn.disabled = false);
+                    if (statusEl) {
+                        statusEl.textContent = 'Error';
+                        statusEl.style.color = '#ef4444';
+                    }
+                    showNotification(`Error: ${data.error || 'Failed to submit feedback'}`, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error submitting feedback:', error);
+                buttons.forEach(btn => btn.disabled = false);
+                if (statusEl) {
+                    statusEl.textContent = 'Error';
+                    statusEl.style.color = '#ef4444';
+                }
+                showNotification('Network error. Please try again.', 'danger');
+            });
         }
 
         function showNotification(message, type = 'info') {
@@ -1910,6 +2045,10 @@
                 'SOC Builder': 'fa-shield-halved',
                 'Semantic Detector': 'fa-brain',
                 'Intelligent Detector': 'fa-robot',
+                'Formal Analyzer V5.2': 'fa-microscope',
+                'PromptSleuth Arbitre': 'fa-scale-balanced',
+                'Verdict Fusion': 'fa-code-merge',
+                'Sophisticated Detector (Fallback)': 'fa-magnifying-glass-chart',
                 'SOC Analyst': 'fa-user-shield',
                 'Remediator': 'fa-hammer',
                 'System': 'fa-server'
@@ -2034,6 +2173,9 @@
                     ` : ''}`;
             }
 
+            // Extract LLM explanation if available
+            const llmExplanation = alert.llm_explanation || '';
+
             remediationDiv.innerHTML = `
                 <div class="remediation-header">
                     <div class="remediation-title">
@@ -2048,6 +2190,18 @@
                     <strong style="color: var(--warning-color);">Source IP:</strong> ${srcIp}<br>
                     <strong style="color: var(--warning-color);">Time:</strong> ${new Date().toLocaleString()}
                 </div>
+
+                ${llmExplanation ? `
+                <div style="margin-bottom: 0.75rem; padding: 0.75rem; background: rgba(59, 130, 246, 0.1); border-left: 3px solid var(--primary-color); border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--primary-color); font-weight: 600;">
+                        <i class="fas fa-robot"></i>
+                        SOC Analyst Explanation
+                    </div>
+                    <div style="font-size: 0.9rem; line-height: 1.5; color: var(--text-primary);">
+                        ${llmExplanation}
+                    </div>
+                </div>
+                ` : ''}
 
                 <div class="remediation-plan">
                     <div class="remediation-plan-title">

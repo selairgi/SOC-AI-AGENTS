@@ -1,0 +1,120 @@
+{
+  "version": "1.0.0",
+  "description": "Remediation policy rules for SOC automation",
+  "default_decision": "require_human",
+  "rules": [
+    {
+      "id": "rule-001",
+      "name": "Auto-allow rate limiting",
+      "description": "Rate limiting is low-risk and can be auto-approved",
+      "conditions": {
+        "action_types": ["rate_limit"],
+        "threat_types": ["*"]
+      },
+      "decision": "allow",
+      "priority": 10
+    },
+    {
+      "id": "rule-002",
+      "name": "Auto-allow enhanced monitoring",
+      "description": "Enhanced monitoring is passive and safe to auto-approve",
+      "conditions": {
+        "action_types": ["enhanced_monitoring"],
+        "threat_types": ["*"]
+      },
+      "decision": "allow",
+      "priority": 10
+    },
+    {
+      "id": "rule-003",
+      "name": "Auto-allow flagging users",
+      "description": "Flagging users for review is non-disruptive",
+      "conditions": {
+        "action_types": ["flag_user"],
+        "threat_types": ["*"]
+      },
+      "decision": "allow",
+      "priority": 10
+    },
+    {
+      "id": "rule-004",
+      "name": "Require human for user suspension",
+      "description": "Suspending users requires human approval",
+      "conditions": {
+        "action_types": ["suspend_user"],
+        "threat_types": ["*"]
+      },
+      "decision": "require_human",
+      "priority": 20
+    },
+    {
+      "id": "rule-005",
+      "name": "Require human for agent isolation",
+      "description": "Isolating agents can disrupt operations",
+      "conditions": {
+        "action_types": ["isolate_agent"],
+        "threat_types": ["*"]
+      },
+      "decision": "require_human",
+      "priority": 20
+    },
+    {
+      "id": "rule-006",
+      "name": "Deny IP blocks for internal ranges",
+      "description": "Never auto-block internal IP ranges",
+      "conditions": {
+        "action_types": ["block_ip"],
+        "target_patterns": {
+          "ip_address": ["10.*", "192.168.*", "172.16.*", "172.17.*", "172.18.*", "172.19.*", "172.20.*", "172.21.*", "172.22.*", "172.23.*", "172.24.*", "172.25.*", "172.26.*", "172.27.*", "172.28.*", "172.29.*", "172.30.*", "172.31.*"]
+        }
+      },
+      "decision": "deny",
+      "reason": "Cannot block internal IP addresses",
+      "priority": 5
+    },
+    {
+      "id": "rule-007",
+      "name": "Allow blocking external IPs for data exfiltration",
+      "description": "Auto-approve IP blocks for confirmed exfiltration",
+      "conditions": {
+        "action_types": ["block_ip"],
+        "threat_types": ["data_exfiltration"],
+        "requires_approval": false
+      },
+      "decision": "allow",
+      "priority": 15
+    },
+    {
+      "id": "rule-008",
+      "name": "Require human for compliance notifications",
+      "description": "Compliance matters require human oversight",
+      "conditions": {
+        "action_types": ["compliance_notification"],
+        "threat_types": ["*"]
+      },
+      "decision": "require_human",
+      "priority": 20
+    },
+    {
+      "id": "rule-009",
+      "name": "Allow forensics initiation",
+      "description": "Starting forensics investigation is always safe",
+      "conditions": {
+        "action_types": ["initiate_forensics"],
+        "threat_types": ["*"]
+      },
+      "decision": "allow",
+      "priority": 10
+    },
+    {
+      "id": "rule-010",
+      "name": "Require human for unknown action types",
+      "description": "Fallback rule for unrecognized actions",
+      "conditions": {
+        "action_types": ["*"]
+      },
+      "decision": "require_human",
+      "priority": 100
+    }
+  ]
+}

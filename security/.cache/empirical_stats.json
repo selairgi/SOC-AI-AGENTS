@@ -1,0 +1,30 @@
+{
+  "proper_grammar": {
+    "fp_count": 428,
+    "tp_count": 172
+  },
+  "educational_indicator": {
+    "fp_count": 182,
+    "tp_count": 28
+  },
+  "question_mark": {
+    "fp_count": 328,
+    "tp_count": 32
+  },
+  "context_keyword": {
+    "fp_count": 176,
+    "tp_count": 8
+  },
+  "attack_keyword": {
+    "fp_count": 18,
+    "tp_count": 132
+  },
+  "quoted_attack": {
+    "fp_count": 126,
+    "tp_count": 24
+  },
+  "legitimate_pattern": {
+    "fp_count": 146,
+    "tp_count": 4
+  }
+}

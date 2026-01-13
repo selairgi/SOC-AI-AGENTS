@@ -26,7 +26,6 @@ from pathlib import Path
 from flask import Flask, render_template, request, jsonify, session, g
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from flask_cors import CORS
 import uuid
 
@@ -50,6 +49,7 @@ else:  # Running locally
 
 # Import modules
 from security_pipeline import SecureSOCWebIntegration
+from database import db as database
 
 # Load environment variables
 load_dotenv()
@@ -98,31 +98,62 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max request size
 
+# Detect deployment mode for CORS configuration
+DEPLOYMENT_MODE = os.getenv('DEPLOYMENT_MODE', 'local')
+if DEPLOYMENT_MODE in ['tunnel', 'cloudflare']:
+    # Cloudflare Tunnel or full Cloudflare: Accept all origins
+    ALLOWED_ORIGINS = "*"
+    logger.info(f"🌐 Deployment mode: {DEPLOYMENT_MODE} - Accepting all origins for Cloudflare")
+else:
+    # Local development: Restrict to configured origins
+    ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', 'http://localhost:5000').split(',')
+    logger.info(f"🌐 Deployment mode: local - Restricting origins to: {ALLOWED_ORIGINS}")
+
 # CORS Configuration
 CORS(app, resources={
     r"/api/*": {
-        "origins": os.getenv('ALLOWED_ORIGINS', 'http://localhost:5000').split(','),
+        "origins": ALLOWED_ORIGINS,
         "methods": ["GET", "POST"],
         "allow_headers": ["Content-Type", "Authorization", "X-CSRFToken"]
     }
 })
 
+# Custom function to get real client IP (prioritizes CF-Connecting-IP for Cloudflare)
+def get_real_client_ip():
+    """Get real client IP, prioritizing Cloudflare headers for tunnel mode"""
+    # CF-Connecting-IP is validated by Cloudflare and most reliable
+    client_ip = request.headers.get('CF-Connecting-IP') or \
+                request.headers.get('X-Forwarded-For') or \
+                request.remote_addr
+
+    if client_ip and ',' in client_ip:
+        client_ip = client_ip.split(',')[0].strip()
+
+    return client_ip
+
 # Rate Limiting
 # Increased limits to allow for CTF testing (190+ rapid requests)
 limiter = Limiter(
     app=app,
-    key_func=get_remote_address,
+    key_func=get_real_client_ip,
     default_limits=["1000 per day", "500 per hour"],
     storage_uri=os.getenv('REDIS_URL', 'memory://')
 )
 
-# SocketIO
+# SocketIO Configuration
 socketio = SocketIO(
     app,
-    cors_allowed_origins=os.getenv('ALLOWED_ORIGINS', 'http://localhost:5000').split(','),
+    cors_allowed_origins=ALLOWED_ORIGINS,
     async_mode='threading',
     logger=False,
-    engineio_logger=False
+    engineio_logger=False,
+    # Enable both polling and websocket transports
+    transports=['polling', 'websocket'],
+    # Allow upgrades from polling to websocket
+    allow_upgrades=True,
+    # Ping settings for stability through Cloudflare
+    ping_timeout=60,
+    ping_interval=25
 )
 
 
@@ -134,8 +165,12 @@ def check_ip_blocked():
     if request.path == '/health':
         return None
 
-    # Get client IP
-    user_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    # Get client IP - prioritize CF-Connecting-IP for Cloudflare Tunnel
+    # CF-Connecting-IP is validated by Cloudflare and more reliable
+    user_ip = request.headers.get('CF-Connecting-IP') or \
+              request.headers.get('X-Forwarded-For') or \
+              request.remote_addr
+
     if user_ip and ',' in user_ip:
         user_ip = user_ip.split(',')[0].strip()
 
@@ -144,7 +179,7 @@ def check_ip_blocked():
     if 'soc' in globals() and globals()['soc'] is not None:
         soc_instance = globals()['soc']
         if hasattr(soc_instance, 'real_remediator') and soc_instance.real_remediator.is_ip_blocked(user_ip):
-            logger.warning(f"🚫 BLOCKED REQUEST from blocked IP: {user_ip}")
+            logger.warning(f"🚫 BLOCKED REQUEST from blocked IP: {user_ip} (via {DEPLOYMENT_MODE})")
             return jsonify({
                 'error': 'Access Denied',
                 'message': 'Your IP address has been blocked due to security violations.',
@@ -466,7 +501,7 @@ def chat():
         # Allow user_id and session_id from request body for testing, otherwise use session
         user_id = data.get('user_id') or session.get('user_id', 'anonymous')
         session_id = data.get('session_id') or session.get('session_id', str(uuid.uuid4()))
-        user_ip = request.remote_addr or '127.0.0.1'
+        user_ip = get_real_client_ip() or '127.0.0.1'
         
         if not soc:
             return jsonify({'error': 'SOC system not initialized'}), 503
@@ -570,6 +605,173 @@ def get_security_alerts():
         })
     except Exception as e:
         logger.error(f"Error in get_security_alerts: {e}", exc_info=True)
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+@app.route('/api/feedback', methods=['POST'])
+@limiter.limit("20 per minute")
+@require_csrf
+def submit_operator_feedback():
+    """
+    Submit operator feedback for an alert
+
+    Allows SOC operators to mark alerts as:
+    - Safe (false positive - legitimate educational question)
+    - Threat (confirmed attack)
+
+    Request Body:
+    {
+        "alert_id": "AL-123456",
+        "actual_label": "safe" | "threat",
+        "operator_notes": "Optional notes from operator"
+    }
+    """
+    if not soc:
+        return jsonify({'error': 'SOC system not initialized'}), 503
+
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Invalid request body'}), 400
+
+        alert_id = data.get('alert_id')
+        actual_label = data.get('actual_label')
+        operator_notes = data.get('operator_notes', '')
+
+        # Validate inputs
+        if not alert_id:
+            return jsonify({'error': 'Missing required field: alert_id'}), 400
+
+        if actual_label not in ['safe', 'threat']:
+            return jsonify({'error': 'Invalid actual_label. Must be "safe" or "threat"'}), 400
+
+        # Find alert in SOC alerts history
+        alert_data = None
+        app.logger.debug(f"Looking for alert {alert_id} in {len(soc.soc_alerts)} cached alerts")
+
+        for alert in soc.soc_alerts:
+            if hasattr(alert.get('alert'), 'id') and alert.get('alert').id == alert_id:
+                alert_data = alert
+                app.logger.info(f"Found alert {alert_id} in memory cache")
+                break
+
+        if not alert_data:
+            # Try to get from database if we have it
+            app.logger.debug(f"Alert {alert_id} not in cache, checking PostgreSQL...")
+            alert_details = database.get_alert_details(alert_id)
+
+            if not alert_details:
+                app.logger.error(f"Alert {alert_id} not found in memory OR PostgreSQL")
+                return jsonify({'error': 'Alert not found'}), 404
+
+            app.logger.info(f"Found alert {alert_id} in PostgreSQL")
+
+            # Reconstruct alert_data from database
+            alert_data = {
+                'alert': type('Alert', (), alert_details)(),
+                'message': alert_details.get('message'),
+                'user_id': alert_details.get('user_id'),
+                'session_id': alert_details.get('session_id'),
+                'src_ip': alert_details.get('src_ip'),
+                'fp_probability': alert_details.get('fp_probability'),
+                'confidence': alert_details.get('confidence'),
+                'detection_method': alert_details.get('detection_method'),
+                'reasoning': alert_details.get('reasoning', []),
+                'suspicious_keywords': alert_details.get('suspicious_keywords', [])
+            }
+
+        # Determine predicted label based on recommended action
+        fp_score = alert_data.get('fp_score')
+        if fp_score:
+            predicted_label = fp_score.recommended_action
+        else:
+            predicted_label = 'investigate'
+
+        # Create feedback sample for adaptive learning
+        from security.adaptive_learning_system import FeedbackSample
+
+        feedback_sample = FeedbackSample(
+            message=alert_data.get('message'),
+            predicted_label=predicted_label,
+            actual_label=actual_label,
+            timestamp=time.time(),
+            fp_probability=alert_data.get('fp_probability', 0.5),
+            confidence=alert_data.get('confidence', 0.5),
+            detection_method=alert_data.get('detection_method', 'unknown'),
+            reasoning=alert_data.get('reasoning', []) if isinstance(alert_data.get('reasoning'), list) else [],
+            session_id=alert_data.get('session_id'),
+            user_id=alert_data.get('user_id')
+        )
+
+        # Add to adaptive learning system
+        if hasattr(soc.fp_detector, 'adaptive_learner'):
+            soc.fp_detector.adaptive_learner.add_feedback(feedback_sample)
+            logger.info(f"Added feedback to adaptive learner: {alert_id} → {actual_label}")
+
+        # Save to PostgreSQL database (persists across container restarts)
+        feedback_data = {
+            'alert_id': alert_id,
+            'message': alert_data.get('message'),
+            'user_id': alert_data.get('user_id'),
+            'session_id': alert_data.get('session_id'),
+            'predicted_label': predicted_label,
+            'actual_label': actual_label,
+            'fp_probability': alert_data.get('fp_probability'),
+            'confidence': alert_data.get('confidence'),
+            'threat_score': 1.0 - alert_data.get('fp_probability', 0.5),
+            'detection_method': alert_data.get('detection_method'),
+            'reasoning': alert_data.get('reasoning', []) if isinstance(alert_data.get('reasoning'), list) else [],
+            'suspicious_keywords': alert_data.get('suspicious_keywords', []) if isinstance(alert_data.get('suspicious_keywords'), list) else [],
+            'operator_id': session.get('user_id', 'operator'),
+            'operator_notes': operator_notes,
+            'message_timestamp': alert_data.get('timestamp', time.time())
+        }
+
+        db_saved = database.save_operator_feedback(feedback_data)
+
+        # Get updated learning statistics
+        learning_stats = {}
+        if hasattr(soc.fp_detector, 'adaptive_learner'):
+            learning_stats = soc.fp_detector.adaptive_learner.get_statistics()
+
+        return jsonify({
+            'success': True,
+            'message': f'Feedback recorded: {actual_label}',
+            'alert_id': alert_id,
+            'actual_label': actual_label,
+            'persisted': db_saved,
+            'learning_stats': learning_stats
+        })
+
+    except Exception as e:
+        logger.error(f"Error in submit_operator_feedback: {e}", exc_info=True)
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+@app.route('/api/feedback/statistics', methods=['GET'])
+@limiter.limit("30 per minute")
+def get_feedback_statistics():
+    """Get feedback and learning statistics"""
+    if not soc:
+        return jsonify({'error': 'SOC system not initialized'}), 503
+
+    try:
+        # Get adaptive learning statistics
+        learning_stats = {}
+        if hasattr(soc.fp_detector, 'adaptive_learner'):
+            learning_stats = soc.fp_detector.adaptive_learner.get_statistics()
+
+        # Get database feedback statistics
+        db_stats = database.get_feedback_statistics()
+
+        return jsonify({
+            'success': True,
+            'adaptive_learning': learning_stats,
+            'database_feedback': db_stats
+        })
+
+    except Exception as e:
+        logger.error(f"Error in get_feedback_statistics: {e}", exc_info=True)
         return jsonify({'error': 'Internal server error'}), 500
 
 

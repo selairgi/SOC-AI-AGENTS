@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "raw_log_event.schema.json",
+  "title": "RawLogEvent",
+  "description": "Event representing a raw log entry to be processed for threat detection",
+  "type": "object",
+  "required": ["event_id", "correlation_id", "timestamp", "producer", "payload"],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "Unique identifier for this event instance",
+      "pattern": "^[a-f0-9-]{36}$"
+    },
+    "correlation_id": {
+      "type": "string",
+      "description": "Identifier to correlate related events across the pipeline",
+      "pattern": "^[a-f0-9-]{36}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 timestamp when the event was created"
+    },
+    "producer": {
+      "type": "string",
+      "description": "Identifier of the component that produced this event",
+      "examples": ["log_collector", "agent_monitor", "api_gateway"]
+    },
+    "payload": {
+      "type": "object",
+      "required": ["source", "message"],
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "Source of the log entry (e.g., agent name, service)"
+        },
+        "message": {
+          "type": "string",
+          "description": "The log message content"
+        },
+        "agent_id": {
+          "type": "string",
+          "description": "Identifier of the AI agent"
+        },
+        "agent_type": {
+          "type": "string",
+          "enum": ["medical", "financial", "customer_service", "code_assistant", "research", "general"],
+          "description": "Type of the AI agent"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "Identifier of the user"
+        },
+        "session_id": {
+          "type": "string",
+          "description": "Session identifier"
+        },
+        "src_ip": {
+          "type": "string",
+          "description": "Source IP address"
+        },
+        "request_id": {
+          "type": "string",
+          "description": "Request identifier"
+        },
+        "log_timestamp": {
+          "type": "number",
+          "description": "Original timestamp of the log entry (Unix epoch)"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

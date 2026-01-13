@@ -1,0 +1,5 @@
+{
+  "threat_indicators": {
+    "obfuscation_techniques:l33t_speak": 1
+  }
+}

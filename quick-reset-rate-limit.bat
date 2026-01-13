@@ -1,6 +1,0 @@
-@echo off
-echo Reinitialisation rapide du rate limit...
-docker compose restart web
-echo Done! Attente du demarrage (5 secondes)...
-timeout /t 5 /nobreak >nul
-echo ✅ Pret!

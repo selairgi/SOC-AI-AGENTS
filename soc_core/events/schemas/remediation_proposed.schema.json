@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "remediation_proposed.schema.json",
+  "title": "RemediationProposed",
+  "description": "Event emitted when a remediation playbook is proposed for an analyzed alert",
+  "type": "object",
+  "required": ["event_id", "correlation_id", "timestamp", "producer", "payload"],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "Unique identifier for this event instance",
+      "pattern": "^[a-f0-9-]{36}$"
+    },
+    "correlation_id": {
+      "type": "string",
+      "description": "Identifier to correlate related events across the pipeline",
+      "pattern": "^[a-f0-9-]{36}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 timestamp when the event was created"
+    },
+    "producer": {
+      "type": "string",
+      "description": "Identifier of the component that produced this event",
+      "examples": ["soc_analyst", "remediation_planner"]
+    },
+    "payload": {
+      "type": "object",
+      "required": ["alert_id", "analysis_id", "playbook_id", "proposed_actions"],
+      "properties": {
+        "alert_id": {
+          "type": "string",
+          "description": "Reference to the original alert"
+        },
+        "analysis_id": {
+          "type": "string",
+          "description": "Reference to the analysis that triggered this proposal"
+        },
+        "playbook_id": {
+          "type": "string",
+          "description": "Unique identifier for this remediation playbook"
+        },
+        "threat_type": {
+          "type": "string",
+          "description": "Type of threat being remediated"
+        },
+        "proposed_actions": {
+          "type": "array",
+          "description": "List of proposed remediation actions",
+          "items": {
+            "type": "object",
+            "required": ["action_id", "action_type", "target"],
+            "properties": {
+              "action_id": {
+                "type": "string",
+                "description": "Unique identifier for this action"
+              },
+              "action_type": {
+                "type": "string",
+                "enum": [
+                  "block_ip",
+                  "suspend_user",
+                  "isolate_agent",
+                  "rate_limit",
+                  "flag_user",
+                  "initiate_forensics",
+                  "enhanced_monitoring",
+                  "compliance_notification",
+                  "human_review"
+                ],
+                "description": "Type of remediation action"
+              },
+              "target": {
+                "type": "object",
+                "description": "Target of the action",
+                "properties": {
+                  "ip_address": { "type": "string" },
+                  "user_id": { "type": "string" },
+                  "agent_id": { "type": "string" },
+                  "session_id": { "type": "string" }
+                }
+              },
+              "parameters": {
+                "type": "object",
+                "description": "Action-specific parameters",
+                "properties": {
+                  "duration_seconds": { "type": "integer" },
+                  "rate_limit_requests": { "type": "integer" },
+                  "rate_limit_window_seconds": { "type": "integer" },
+                  "notification_recipients": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              },
+              "priority": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 10,
+                "description": "Execution priority (1 = highest)"
+              }
+            }
+          }
+        },
+        "justification": {
+          "type": "string",
+          "description": "Reasoning for the proposed remediation"
+        },
+        "requires_approval": {
+          "type": "boolean",
+          "description": "Whether this playbook requires human approval before execution"
+        },
+        "auto_execute": {
+          "type": "boolean",
+          "description": "Whether this playbook should be auto-executed"
+        },
+        "expiry": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO8601 timestamp when this proposal expires if not acted upon"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

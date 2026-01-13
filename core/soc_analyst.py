@@ -44,8 +44,8 @@ class SOCAnalyst:
         self.fp_detector = FalsePositiveDetector()
         
         # Initialize intelligent remediation planner
-        ai_integration = RealAIIntegration()
-        self.remediation_planner = IntelligentRemediationPlanner(ai_integration)
+        self.ai_integration = RealAIIntegration()
+        self.remediation_planner = IntelligentRemediationPlanner(self.ai_integration)
         
         # Statistics
         self.stats = {
@@ -57,12 +57,21 @@ class SOCAnalyst:
             "playbooks_created": 0
         }
 
+    # DISABLED: LLM-based explanation method removed due to API incompatibility
+    # The RealAIIntegration class doesn't have a 'chat()' method.
+    # Simple explanations are now generated inline where needed.
+    #
+    # def _explain_decision_with_llm(self, alert: Alert, decision: str, certainty_score: float,
+    #                                 false_positive_probability: float, reasoning: List[str]) -> str:
+    #     """Use LLM to generate human-readable explanation of the decision."""
+    #     pass
+
     def analyze_alert(self, alert: Alert) -> Optional[Playbook]:
         """Analyze an alert and determine appropriate remediation action with certainty scoring.
-        
+
         Args:
             alert: The security alert to analyze
-            
+
         Returns:
             Playbook with remediation action, or None if no action needed
         """
@@ -120,14 +129,27 @@ class SOCAnalyst:
             if false_positive_probability > 0.7:
                 decision = "false_positive"
                 self.stats["false_positives_identified"] += 1
-                self.logger.info(f"Alert {alert.id} classified as FALSE POSITIVE (certainty: {certainty_score:.2f})")
             elif certainty_score > 0.7:
                 decision = "alert"
                 self.stats["true_positives_identified"] += 1
-                self.logger.info(f"Alert {alert.id} classified as REAL THREAT (certainty: {certainty_score:.2f})")
             else:
                 decision = "investigate"
-                self.logger.info(f"Alert {alert.id} requires INVESTIGATION (certainty: {certainty_score:.2f})")
+
+            # Simple explanation (LLM-based explanation removed due to API incompatibility)
+            action_map = {
+                "alert": "BLOCKING",
+                "false_positive": "PASSING (False Positive)",
+                "investigate": "FLAGGING FOR INVESTIGATION"
+            }
+            explanation = f"{action_map.get(decision, 'PROCESSING')} - Certainty: {certainty_score:.0%}, FP Probability: {false_positive_probability:.0%}"
+
+            # Log with explanation
+            if decision == "false_positive":
+                self.logger.info(f"✅ PASS - Alert {alert.id}: {explanation}")
+            elif decision == "alert":
+                self.logger.warning(f"🚨 BLOCK - Alert {alert.id}: {explanation}")
+            else:
+                self.logger.info(f"⚠️ INVESTIGATE - Alert {alert.id}: {explanation}")
         
         # Store decision in memory
         decision_id = self.memory.store_alert_decision(
@@ -140,28 +162,37 @@ class SOCAnalyst:
                 "severity": alert.severity,
                 "threat_type": alert.threat_type.value if alert.threat_type else "unknown",
                 "rule_id": alert.rule_id,
-                "agent_id": agent_id
+                "agent_id": agent_id,
+                "llm_explanation": explanation  # Store LLM explanation
             }
         )
-        
+
+        # Also store explanation in alert evidence for later access
+        if not alert.evidence:
+            alert.evidence = {}
+        alert.evidence["llm_explanation"] = explanation
+        alert.evidence["decision"] = decision
+        alert.evidence["certainty_score"] = certainty_score
+        alert.evidence["false_positive_probability"] = false_positive_probability
+
         self.stats["alerts_classified"] += 1
         # Update average certainty
         total = self.stats["alerts_classified"]
         self.stats["average_certainty"] = (
             (self.stats["average_certainty"] * (total - 1) + certainty_score) / total
         )
-        
+
         # If classified as false positive, return None (no action)
         if decision == "false_positive":
             return None
-            
+
         # --- Use Intelligent Remediation Planner ---
         plan = self.remediation_planner.create_remediation_plan(alert, certainty_score)
-        
+
         if not plan:
             self.logger.info(f"Planner decided no action needed for alert {alert.id}")
             return None
-            
+
         # Create Playbook from Plan
         playbook = Playbook(
             action=plan.action,
@@ -179,7 +210,8 @@ class SOCAnalyst:
                 "confidence": certainty_score,
                 "certainty_score": certainty_score,
                 "is_lab_context": plan.metadata.get("is_lab_context", False),
-                "actions": plan.actions # Structured actions for remediator
+                "actions": plan.actions, # Structured actions for remediator
+                "llm_explanation": explanation  # Store LLM explanation in playbook metadata
             }
         )
         return playbook

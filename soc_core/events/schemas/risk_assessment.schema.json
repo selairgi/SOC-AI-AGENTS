@@ -1,0 +1,130 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "risk_assessment.schema.json",
+  "title": "RiskAssessment",
+  "description": "Event emitted when risk has been assessed for an alert or enriched context",
+  "type": "object",
+  "required": ["event_id", "correlation_id", "timestamp", "producer", "payload"],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "Unique identifier for this event instance",
+      "pattern": "^[a-f0-9-]{36}$"
+    },
+    "correlation_id": {
+      "type": "string",
+      "description": "Identifier to correlate related events across the pipeline",
+      "pattern": "^[a-f0-9-]{36}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 timestamp when the event was created"
+    },
+    "producer": {
+      "type": "string",
+      "description": "Identifier of the component that produced this event",
+      "examples": ["risk_agent"]
+    },
+    "payload": {
+      "type": "object",
+      "required": ["assessment_id", "source_event_type", "risk_scores", "overall_risk_level"],
+      "properties": {
+        "assessment_id": {
+          "type": "string",
+          "description": "Unique identifier for this risk assessment"
+        },
+        "source_event_type": {
+          "type": "string",
+          "enum": ["AnalysisCompleted", "ContextEnriched"],
+          "description": "The event type that triggered this assessment"
+        },
+        "source_event_id": {
+          "type": "string",
+          "description": "Reference to the source event"
+        },
+        "alert_id": {
+          "type": "string",
+          "description": "Reference to the original alert"
+        },
+        "incident_id": {
+          "type": "string",
+          "description": "Reference to the incident (if from ContextEnriched)"
+        },
+        "risk_scores": {
+          "type": "object",
+          "required": ["technical_severity", "business_impact", "blast_radius"],
+          "properties": {
+            "technical_severity": {
+              "type": "string",
+              "enum": ["low", "medium", "high"],
+              "description": "Technical severity of the threat"
+            },
+            "business_impact": {
+              "type": "string",
+              "enum": ["low", "medium", "high"],
+              "description": "Potential business impact"
+            },
+            "blast_radius": {
+              "type": "string",
+              "enum": ["single_user", "team", "org"],
+              "description": "Scope of potential impact"
+            }
+          }
+        },
+        "overall_risk_level": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "critical"],
+          "description": "Combined overall risk level"
+        },
+        "risk_score_numeric": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Numeric risk score (0-100)"
+        },
+        "factors": {
+          "type": "object",
+          "description": "Factors that influenced the risk assessment",
+          "properties": {
+            "threat_type": {
+              "type": "string"
+            },
+            "alert_severity": {
+              "type": "string"
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "similar_alert_count": {
+              "type": "integer"
+            },
+            "is_escalating": {
+              "type": "boolean"
+            },
+            "affected_agents": {
+              "type": "integer"
+            },
+            "affected_users": {
+              "type": "integer"
+            },
+            "affected_ips": {
+              "type": "integer"
+            },
+            "verdict": {
+              "type": "string"
+            }
+          }
+        },
+        "recommendations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Recommended actions based on risk assessment"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

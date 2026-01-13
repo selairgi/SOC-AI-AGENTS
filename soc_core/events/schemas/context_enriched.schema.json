@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "context_enriched.schema.json",
+  "title": "ContextEnriched",
+  "description": "Event emitted when an alert has been enriched with contextual information",
+  "type": "object",
+  "required": ["event_id", "correlation_id", "timestamp", "producer", "payload"],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "Unique identifier for this event instance",
+      "pattern": "^[a-f0-9-]{36}$"
+    },
+    "correlation_id": {
+      "type": "string",
+      "description": "Identifier to correlate related events across the pipeline",
+      "pattern": "^[a-f0-9-]{36}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 timestamp when the event was created"
+    },
+    "producer": {
+      "type": "string",
+      "description": "Identifier of the component that produced this event",
+      "examples": ["context_agent"]
+    },
+    "payload": {
+      "type": "object",
+      "required": ["alert_id", "incident_id", "context"],
+      "properties": {
+        "alert_id": {
+          "type": "string",
+          "description": "Reference to the original alert"
+        },
+        "incident_id": {
+          "type": "string",
+          "description": "Identifier grouping related alerts into an incident"
+        },
+        "original_alert": {
+          "type": "object",
+          "description": "The original AlertDetected payload"
+        },
+        "context": {
+          "type": "object",
+          "required": ["similar_alert_count", "first_seen", "last_seen"],
+          "properties": {
+            "similar_alert_count": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Number of similar alerts seen for this correlation"
+            },
+            "first_seen": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of the first alert in this incident"
+            },
+            "last_seen": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Timestamp of the most recent alert"
+            },
+            "is_new_incident": {
+              "type": "boolean",
+              "description": "Whether this is the first alert for this incident"
+            },
+            "is_escalating": {
+              "type": "boolean",
+              "description": "Whether alert frequency is increasing"
+            },
+            "threat_types_seen": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "List of threat types observed in this incident"
+            },
+            "sources_involved": {
+              "type": "object",
+              "description": "Aggregated source information",
+              "properties": {
+                "agent_ids": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "user_ids": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "src_ips": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              }
+            },
+            "max_severity": {
+              "type": "string",
+              "enum": ["low", "medium", "high", "critical"],
+              "description": "Highest severity seen in this incident"
+            },
+            "time_span_seconds": {
+              "type": "number",
+              "description": "Time span between first and last alert in seconds"
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
