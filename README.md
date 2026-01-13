@@ -660,31 +660,31 @@ The system uses **PostgreSQL** for persistent storage of alerts, feedback, and l
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    POSTGRESQL DATABASE                       │
-│                       (Port 5432)                            │
+│                    POSTGRESQL DATABASE                      │
+│                       (Port 5432)                           │
 ├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌──────────────────────┐    ┌──────────────────────┐     │
-│  │  alert_history       │    │  operator_feedback   │     │
-│  ├──────────────────────┤    ├──────────────────────┤     │
-│  │ • alert_id (PK)      │    │ • id (PK)            │     │
-│  │ • message            │    │ • alert_id (FK)      │     │
-│  │ • user_id            │    │ • message            │     │
-│  │ • session_id         │    │ • predicted_label    │     │
-│  │ • severity           │    │ • actual_label       │     │
-│  │ • threat_type        │    │ • operator_notes     │     │
-│  │ • detection_method   │    │ • feedback_timestamp │     │
-│  │ • confidence         │    │                      │     │
-│  │ • reasoning[]        │    │                      │     │
-│  │ • timestamp          │    │                      │     │
-│  └──────────────────────┘    └──────────────────────┘     │
+│                                                             │
+│  ┌──────────────────────┐    ┌──────────────────────┐       │
+│  │  alert_history       │    │  operator_feedback   │       │
+│  ├──────────────────────┤    ├──────────────────────┤       │
+│  │ • alert_id (PK)      │    │ • id (PK)            │       │
+│  │ • message            │    │ • alert_id (FK)      │       │
+│  │ • user_id            │    │ • message            │       │
+│  │ • session_id         │    │ • predicted_label    │       │
+│  │ • severity           │    │ • actual_label       │       │
+│  │ • threat_type        │    │ • operator_notes     │       │
+│  │ • detection_method   │    │ • feedback_timestamp │       │
+│  │ • confidence         │    │                      │       │
+│  │ • reasoning[]        │    │                      │       │
+│  │ • timestamp          │    │                      │       │
+│  └──────────────────────┘    └──────────────────────┘       │
 │           │                            │                    │
 │           └────────────────┬───────────┘                    │
 │                            │                                │
 │                            ▼                                │
 │                  Adaptive Learning System                   │
 │                  (False Positive Reduction)                 │
-│                                                              │
+│                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
