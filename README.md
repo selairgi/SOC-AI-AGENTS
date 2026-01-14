@@ -17,6 +17,7 @@ Protect AI-powered applications from prompt injection attacks through a **4-laye
 - Contextual understanding (LLM intelligence)
 - Behavioral scoring (semantic analysis)
 - Learned attack signatures (ML ensemble)
+<img width="1882" height="873" alt="chatbot" src="https://github.com/user-attachments/assets/b996e97b-9732-4dcc-977b-3bc09a596129" />
 
 ---
 
@@ -955,6 +956,8 @@ docker run --rm -v soc-ai-agents_postgres_data:/data -v $(pwd):/backup \
 ---
 
 ## 📊 Evaluation Results
+
+<img width="4764" height="2098" alt="signal_separation_analysis" src="https://github.com/user-attachments/assets/eb5b0100-59b5-4d00-9ab4-e2bdb9cac32d" />
 
 ### **Test Dataset**: 4000 prompts (2000 attacks + 2000 benign)
 
