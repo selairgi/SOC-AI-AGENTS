@@ -17,7 +17,8 @@ Protect AI-powered applications from prompt injection attacks through a **4-laye
 - Contextual understanding (LLM intelligence)
 - Behavioral scoring (semantic analysis)
 - Learned attack signatures (ML ensemble)
-<img width="1882" height="873" alt="chatbot" src="https://github.com/user-attachments/assets/b996e97b-9732-4dcc-977b-3bc09a596129" />
+
+<img width="1882" height="900" alt="image" src="https://github.com/user-attachments/assets/54595a9d-510e-461d-a2d5-95e8dd6a2d4e" />
 
 ---
 
