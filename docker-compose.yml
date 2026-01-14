@@ -79,7 +79,8 @@ services:
       - ./prompt_sleuth:/app/prompt_sleuth
       - web_logs:/app/logs
       # V7.1: Persist ML models cache across container restarts
-      - ml_models_cache:/app/security/.cache
+      # Bind host cache so trained models persist and are visible to the container
+      - ./security/.cache:/app/security/.cache
     dns:
       - 8.8.8.8
       - 8.8.4.4
@@ -88,94 +89,6 @@ services:
       - soc-network
     restart: unless-stopped
 
-  # NOTE: Services below are DISABLED because everything is integrated in soc-web
-  # Uncomment only if needed for standalone microservices architecture
-
-  # # Core SOC Agents
-  # core:
-  #   build:
-  #     context: .
-  #     dockerfile: ./core/Dockerfile
-  #   container_name: soc-core
-  #   environment:
-  #     - POSTGRES_URL=postgresql://${POSTGRES_USER:-soc}:${POSTGRES_PASSWORD:-soc_password}@postgres:5432/${POSTGRES_DB:-soc_db}
-  #     - REDIS_URL=redis://redis:6379/0
-  #     - OPENAI_API_KEY=${OPENAI_API_KEY}
-  #     - OPENAI_MODEL=${OPENAI_MODEL:-gpt-3.5-turbo}
-  #     - PYTHONPATH=/app
-  #   command: sh -c "pip install --no-cache-dir jsonschema>=4.0.0 && python -m core.main"
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_healthy
-  #   volumes:
-  #     - ./core:/app/core
-  #     - ./shared:/app/shared
-  #     - ./security:/app/security
-  #     - ./ai:/app/ai
-  #     - ./enterprise:/app/enterprise
-  #     - core_logs:/app/logs
-  #   dns:
-  #     - 8.8.8.8
-  #     - 8.8.4.4
-  #     - 1.1.1.1
-  #   networks:
-  #     - soc-network
-  #   restart: unless-stopped
-
-  # # Security Module
-  # security:
-  #   build:
-  #     context: ./security
-  #     dockerfile: Dockerfile
-  #   container_name: soc-security
-  #   environment:
-  #     - REDIS_URL=redis://redis:6379/0
-  #   depends_on:
-  #     - redis
-  #   volumes:
-  #     - ./security:/app
-  #   networks:
-  #     - soc-network
-  #   restart: unless-stopped
-
-  # # Enterprise Module
-  # enterprise:
-  #   build:
-  #     context: ./enterprise
-  #     dockerfile: Dockerfile
-  #   container_name: soc-enterprise
-  #   environment:
-  #     - POSTGRES_URL=postgresql://${POSTGRES_USER:-soc}:${POSTGRES_PASSWORD:-soc_password}@postgres:5432/${POSTGRES_DB:-soc_db}
-  #     - SECRET_KEY=${SECRET_KEY}
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   volumes:
-  #     - ./enterprise:/app
-  #   networks:
-  #     - soc-network
-  #   restart: unless-stopped
-
-  # # AI Integration Module
-  # ai:
-  #   build:
-  #     context: ./ai
-  #     dockerfile: Dockerfile
-  #   container_name: soc-ai
-  #   environment:
-  #     - OPENAI_API_KEY=${OPENAI_API_KEY}
-  #     - OPENAI_MODEL=${OPENAI_MODEL:-gpt-3.5-turbo}
-  #   volumes:
-  #     - ./ai:/app
-  #   dns:
-  #     - 8.8.8.8
-  #     - 8.8.4.4
-  #     - 1.1.1.1
-  #   networks:
-  #     - soc-network
-  #   restart: unless-stopped
 
 volumes:
   postgres_data:
