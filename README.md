@@ -6,6 +6,8 @@
 
 **A production-ready, multi-layered AI security system designed to detect and block sophisticated prompt injection attacks using hybrid intelligence: LLM-based analysis, formal NLP detection, semantic analysis, and machine learning.**
 
+<img width="1024" height="1024" alt="sakana" src="https://github.com/user-attachments/assets/3ce41491-8458-4d5b-9459-02c9a73990b3" />
+
 ---
 
 ## 🎯 Core Mission
